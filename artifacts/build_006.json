@@ -1,0 +1,71 @@
+
+> tapeborn-intelligence@0.1.0 build:006
+> node scripts/build_006.js
+
+[BUILD_006] Scanning blocks 60310333 to latest for USDC transfers...
+{
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "chainHead": 60310338,
+  "blockRange": {
+    "fromBlock": 60310333,
+    "toBlock": 60310338
+  },
+  "totalTransfers": 12,
+  "totalVolumeWei": "46751722000000000000",
+  "totalVolumeUsdc": 46.751722,
+  "topSenders": [
+    {
+      "address": "0x3e23d6b3310a86402844c8319fefb13147772eef",
+      "valueWei": "13140900000000000000",
+      "valueUsdc": 13.1409
+    },
+    {
+      "address": "0x7deae0f753705607cc630f2415a62c9fd7bb7830",
+      "valueWei": "10712500000000000000",
+      "valueUsdc": 10.7125
+    },
+    {
+      "address": "0x8559c77eba1b37ec4c167aa3a398f8cff21b3a55",
+      "valueWei": "8229400000000000000",
+      "valueUsdc": 8.2294
+    },
+    {
+      "address": "0x164649cdc8a5aef4a98a3307fd816a746f5e9ce1",
+      "valueWei": "5722700000000000000",
+      "valueUsdc": 5.7227
+    },
+    {
+      "address": "0xa490a2b64236b7d4bfd285be7138f045990ebd5b",
+      "valueWei": "3000000000000000000",
+      "valueUsdc": 3
+    }
+  ],
+  "topReceivers": [
+    {
+      "address": "0x7c4a655b9f1cd22412c88a9c49db4b9d3fac5fd0",
+      "valueWei": "40791800000000000000",
+      "valueUsdc": 40.7918
+    },
+    {
+      "address": "0x1d01bdcaaf299eea671ec6dd1ec06fee0865c519",
+      "valueWei": "3000000000000000000",
+      "valueUsdc": 3
+    },
+    {
+      "address": "0x7eab7184be6743ec46d38eb865e6af204bd9e7da",
+      "valueWei": "1259922000000000000",
+      "valueUsdc": 1.259922
+    },
+    {
+      "address": "0xa3d9fbd0edb10327ecb73d2c72622e505df468a2",
+      "valueWei": "1000000000000000000",
+      "valueUsdc": 1
+    },
+    {
+      "address": "0x363cc75a89ae5673b427a1fa98afc48ffde7ba43",
+      "valueWei": "500000000000000000",
+      "valueUsdc": 0.5
+    }
+  ]
+}
