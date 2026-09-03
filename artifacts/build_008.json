@@ -1,0 +1,73 @@
+
+> tapeborn-intelligence@0.1.0 build:008
+> node scripts/build_008.js
+
+[BUILD_008] Scanning blocks 60310444 to 60310453 for signals...
+{
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "blockRange": {
+    "fromBlock": 60310444,
+    "toBlock": 60310453
+  },
+  "totalSignals": 3,
+  "signalTypes": {
+    "contract_creation": 3
+  },
+  "signals": [
+    {
+      "id": "contract_creation_1788473157377_1l22",
+      "type": "contract_creation",
+      "timestamp": "2026-09-03T22:05:57.377Z",
+      "data": {
+        "from": "0x987ae65d571097ac926657ff7635588fe417acc4",
+        "blockNumber": 60310445,
+        "txHash": "0x55b58ac01e3be489ec2193eeb5701f6937b206da6ca357c41c06fded0df5d144",
+        "inputLength": 9446
+      },
+      "evidence": {
+        "block": "0x39843ad",
+        "txHash": "0x55b58ac01e3be489ec2193eeb5701f6937b206da6ca357c41c06fded0df5d144",
+        "description": "Contract created by 0x987ae65d... (input length 9446)"
+      },
+      "confidence": 0.8,
+      "version": "v0"
+    },
+    {
+      "id": "contract_creation_1788473157651_xa1m",
+      "type": "contract_creation",
+      "timestamp": "2026-09-03T22:05:57.651Z",
+      "data": {
+        "from": "0x5a418b4b7b6d5f9fc3e15aa16b9fabdcc0d6c42f",
+        "blockNumber": 60310448,
+        "txHash": "0x774c7c5bc1ef9efad0190a9b25180b2614120d174e664494cfd693e3043f720e",
+        "inputLength": 9446
+      },
+      "evidence": {
+        "block": "0x39843b0",
+        "txHash": "0x774c7c5bc1ef9efad0190a9b25180b2614120d174e664494cfd693e3043f720e",
+        "description": "Contract created by 0x5a418b4b... (input length 9446)"
+      },
+      "confidence": 0.8,
+      "version": "v0"
+    },
+    {
+      "id": "contract_creation_1788473157651_g07r",
+      "type": "contract_creation",
+      "timestamp": "2026-09-03T22:05:57.651Z",
+      "data": {
+        "from": "0x6c7bdf3e7564b84be276124a277a481d08007162",
+        "blockNumber": 60310448,
+        "txHash": "0x4526fc24c262d653154ab366aa615e3dc55ed0b67c77383b6b32d56a24faddf9",
+        "inputLength": 9446
+      },
+      "evidence": {
+        "block": "0x39843b0",
+        "txHash": "0x4526fc24c262d653154ab366aa615e3dc55ed0b67c77383b6b32d56a24faddf9",
+        "description": "Contract created by 0x6c7bdf3e... (input length 9446)"
+      },
+      "confidence": 0.8,
+      "version": "v0"
+    }
+  ]
+}

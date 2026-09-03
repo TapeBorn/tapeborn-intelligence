@@ -12,6 +12,7 @@
     "build:004": "node scripts/build_004.js",
     "build:005": "node scripts/build_005.js",
     "build:006": "node scripts/build_006.js",
-    "build:007": "node scripts/build_007.js"
+    "build:007": "node scripts/build_007.js",
+    "build:008": "node scripts/build_008.js"
   }
 }
