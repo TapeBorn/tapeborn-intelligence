@@ -1,0 +1,129 @@
+
+> tapeborn-intelligence@0.1.0 build:007
+> node scripts/build_007.js
+
+[BUILD_007] Scanning blocks 60310370 to latest for wallet activity...
+{
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "chainHead": 60310385,
+  "blockRange": {
+    "fromBlock": 60310370,
+    "toBlock": 60310385
+  },
+  "totalWallets": 224,
+  "totalTxs": 404,
+  "totalVolumeUsdc": 127.32680000000003,
+  "topWallets": [
+    {
+      "address": "0x7c4a655b9f1cd22412c88a9c49db4b9d3fac5fd0",
+      "sentWei": "0",
+      "sentUsdc": 0,
+      "receivedWei": "53666600000000000000",
+      "receivedUsdc": 53.6666,
+      "txCount": 26,
+      "firstSeen": 60310375,
+      "lastSeen": 60310385,
+      "totalUsdc": 53.6666
+    },
+    {
+      "address": "0xeb26ee17f1cb12579cea279f8237248c9f985e2f",
+      "sentWei": "18611100000000000000",
+      "sentUsdc": 18.6111,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 2,
+      "firstSeen": 60310375,
+      "lastSeen": 60310385,
+      "totalUsdc": 18.6111
+    },
+    {
+      "address": "0x646ddcf66c388ad9bf8d41c418fa8b4bbde60830",
+      "sentWei": "14003400000000000000",
+      "sentUsdc": 14.0034,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 1,
+      "firstSeen": 60310375,
+      "lastSeen": 60310375,
+      "totalUsdc": 14.0034
+    },
+    {
+      "address": "0x49261cc90836bf6e877a7347c8fc82b54ee48e8e",
+      "sentWei": "9578400000000000000",
+      "sentUsdc": 9.5784,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 2,
+      "firstSeen": 60310375,
+      "lastSeen": 60310385,
+      "totalUsdc": 9.5784
+    },
+    {
+      "address": "0xb8f08dfad2ffbb8ecdf2d1322199c3cdb3d210aa",
+      "sentWei": "7325500000000000000",
+      "sentUsdc": 7.3255,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 2,
+      "firstSeen": 60310375,
+      "lastSeen": 60310385,
+      "totalUsdc": 7.3255
+    },
+    {
+      "address": "0xe23def4bd9b91160d4280aef2f346c54db5b736b",
+      "sentWei": "4000000000000000000",
+      "sentUsdc": 4,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 1,
+      "firstSeen": 60310380,
+      "lastSeen": 60310380,
+      "totalUsdc": 4
+    },
+    {
+      "address": "0xbc71d50e43e957db9b1011fe3e8964220046f92a",
+      "sentWei": "0",
+      "sentUsdc": 0,
+      "receivedWei": "4000000000000000000",
+      "receivedUsdc": 4,
+      "txCount": 1,
+      "firstSeen": 60310380,
+      "lastSeen": 60310380,
+      "totalUsdc": 4
+    },
+    {
+      "address": "0xc5c68144edac2e1872f744c2b07acc5a78f6e63e",
+      "sentWei": "0",
+      "sentUsdc": 0,
+      "receivedWei": "2000000000000000000",
+      "receivedUsdc": 2,
+      "txCount": 2,
+      "firstSeen": 60310373,
+      "lastSeen": 60310381,
+      "totalUsdc": 2
+    },
+    {
+      "address": "0x7eab7184be6743ec46d38eb865e6af204bd9e7da",
+      "sentWei": "0",
+      "sentUsdc": 0,
+      "receivedWei": "1895100000000000000",
+      "receivedUsdc": 1.8951,
+      "txCount": 4,
+      "firstSeen": 60310372,
+      "lastSeen": 60310378,
+      "totalUsdc": 1.8951
+    },
+    {
+      "address": "0x1d91031f52e927d704ac8d28d42b1d6ddbf928ee",
+      "sentWei": "1673200000000000000",
+      "sentUsdc": 1.6732,
+      "receivedWei": "0",
+      "receivedUsdc": 0,
+      "txCount": 1,
+      "firstSeen": 60310375,
+      "lastSeen": 60310375,
+      "totalUsdc": 1.6732
+    }
+  ]
+}
