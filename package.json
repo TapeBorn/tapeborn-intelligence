@@ -5,7 +5,9 @@
   "description": "TapeBorn — on-chain intelligence. Signal Artifacts NFT pipeline on Arc.",
   "license": "MIT",
   "type": "commonjs",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build:002": "node scripts/build_002.js",
     "build:003": "node scripts/build_003.js",
@@ -13,6 +15,14 @@
     "build:005": "node scripts/build_005.js",
     "build:006": "node scripts/build_006.js",
     "build:007": "node scripts/build_007.js",
-    "build:008": "node scripts/build_008.js"
+    "build:008": "node scripts/build_008.js",
+    "build:009": "node scripts/build_009.js",
+    "build:010": "node scripts/build_010.js",
+    "build:010_dryrun": "node scripts/build_010_dryrun.js"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1",
+    "ethers": "^6.17.0",
+    "solc": "^0.8.36"
   }
 }

@@ -1,0 +1,21 @@
+{
+  "contractAddress": "0x0000000000000000000000000000000000abcdef",
+  "tokenId": 1,
+  "metadata": {
+    "name": "Signal Artifact #1",
+    "description": "Contract created by 0xd2d586ab... (input length 9446)",
+    "chain": "Arc Testnet",
+    "chainId": 5042002,
+    "block": 60312225,
+    "txHash": "0x1b5b5b113d163b1bb95fab69df30ff5b6498c5b408e9b2c79e9b92bc4730113e",
+    "signalId": "contract_creation_1788474070583_btep",
+    "signalType": "contract_creation",
+    "confidence": 0.8,
+    "version": "v0",
+    "timestamp": "2026-09-03T22:21:10.583Z"
+  },
+  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJDb250cmFjdCBjcmVhdGVkIGJ5IDB4ZDJkNTg2YWIuLi4gKGlucHV0IGxlbmd0aCA5NDQ2KSIsImNoYWluIjoiQXJjIFRlc3RuZXQiLCJjaGFpbklkIjo1MDQyMDAyLCJibG9jayI6NjAzMTIyMjUsInR4SGFzaCI6IjB4MWI1YjViMTEzZDE2M2IxYmI5NWZhYjY5ZGYzMGZmNWI2NDk4YzViNDA4ZTliMmM3OWU5YjkyYmM0NzMwMTEzZSIsInNpZ25hbElkIjoiY29udHJhY3RfY3JlYXRpb25fMTc4ODQ3NDA3MDU4M19idGVwIiwic2lnbmFsVHlwZSI6ImNvbnRyYWN0X2NyZWF0aW9uIiwiY29uZmlkZW5jZSI6MC44LCJ2ZXJzaW9uIjoidjAiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAzVDIyOjIxOjEwLjU4M1oifQ==",
+  "txHash": "0x00000000000000000000000000000000000000000000000000000000deadbeef",
+  "simulated": true,
+  "note": "Dry run — contract not actually deployed. Set DEV_WALLET_PRIVATE_KEY to mint for real."
+}
