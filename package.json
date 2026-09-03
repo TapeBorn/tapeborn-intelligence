@@ -1,0 +1,12 @@
+{
+  "name": "tapeborn-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TapeBorn — on-chain intelligence. Signal Artifacts NFT pipeline on Arc.",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build:002": "node scripts/build_002.js"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "build": "BUILD_002",
+  "title": "Arc Connection",
+  "doD": "Node program reads latest Arc block through RPC.",
+  "result": {
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "chainId": 5042002,
+  "blockNumber": 60242084,
+  "blockHex": "0x39738a4",
+  "timestamp": 1788434760,
+  "txCount": 16,
+  "hash": "0x40cf1826c04d0124923a58d1aa2b193ac09ae1defe69c9a7e84a58888da158fa",
+  "parentHash": "0x2e67b010a2e610ca6b0e375c46b32013e8dd7b70915c6a8469a983d801ae6804",
+  "miner": "0xa693cc18aa09d33dd388013b7a02e5ff863b8760",
+  "gasUsed": 2741558,
+  "gasLimit": 30000000,
+  "baseFeePerGas": 20000000000,
+  "elapsedMs": 218
+}
+}
