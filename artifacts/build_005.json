@@ -1,0 +1,82 @@
+
+> tapeborn-intelligence@0.1.0 build:005
+> node scripts/build_005.js
+
+[BUILD_005] Scanning blocks 60310097 to latest for logs...
+Found 317 raw logs. Decoding...
+{
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "chainHead": 60310102,
+  "blockRange": {
+    "fromBlock": 60310097,
+    "toBlock": 60310102
+  },
+  "totalLogs": 317,
+  "decodedSummary": {
+    "Transfer": 226,
+    "Approval": 21,
+    "Deposit": 1,
+    "Withdrawal": 4,
+    "Unknown": 65
+  },
+  "transfersFound": 226,
+  "sampleTransfers": [
+    {
+      "block": 60310098,
+      "tx": "0xcb38a76e5f3b4441...",
+      "from": "0xee46e796fc...",
+      "to": "0x5794a8284a...",
+      "value": "6.536849",
+      "token": "0xffffffffff..."
+    },
+    {
+      "block": 60310098,
+      "tx": "0xcb38a76e5f3b4441...",
+      "from": "0xee46e796fc...",
+      "to": "0x5794a8284a...",
+      "value": "0.000000",
+      "token": "0x3600000000..."
+    },
+    {
+      "block": 60310098,
+      "tx": "0xcb38a76e5f3b4441...",
+      "from": "0x5794a8284a...",
+      "to": "0xee46e796fc...",
+      "value": "3.828541",
+      "token": "0x175cdb1d33..."
+    }
+  ],
+  "sample": [
+    {
+      "address": "0xfffffffffffffffffffffffffffffffffffffffe",
+      "blockNumber": 60310098,
+      "txHash": "0xcb38a76e5f3b4441...",
+      "decoded": "Transfer (0xee46e796... → 0x5794a828...)"
+    },
+    {
+      "address": "0x3600000000000000000000000000000000000000",
+      "blockNumber": 60310098,
+      "txHash": "0xcb38a76e5f3b4441...",
+      "decoded": "Transfer (0xee46e796... → 0x5794a828...)"
+    },
+    {
+      "address": "0x175cdb1d338945f0d851a741ccf787d343e57952",
+      "blockNumber": 60310098,
+      "txHash": "0xcb38a76e5f3b4441...",
+      "decoded": "Transfer (0x5794a828... → 0xee46e796...)"
+    },
+    {
+      "address": "0x5794a8284a29493871fbfa3c4f343d42001424d6",
+      "blockNumber": 60310098,
+      "txHash": "0xcb38a76e5f3b4441...",
+      "decoded": "unknown"
+    },
+    {
+      "address": "0x3600000000000000000000000000000000000000",
+      "blockNumber": 60310098,
+      "txHash": "0xbe2d941e0b6013fc...",
+      "decoded": "Approval (undefined... → undefined...)"
+    }
+  ]
+}
