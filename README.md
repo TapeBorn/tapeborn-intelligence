@@ -22,7 +22,7 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 | BUILD_001 | Genesis Trace | DONE |
 | BUILD_002 | Arc Connection | DONE
 | BUILD_003 | Block Reader | DONE |
-| BUILD_004 | Transaction Reader | PLANNED |
+| BUILD_004 | Transaction Reader | DONE |
 | BUILD_005 | Event Reader | PLANNED |
 | BUILD_006 | USDC Flow | PLANNED |
 | BUILD_007 | Wallet Activity | PLANNED |
