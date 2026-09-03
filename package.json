@@ -8,6 +8,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "build:002": "node scripts/build_002.js",
-    "build:003": "node scripts/build_003.js"
+    "build:003": "node scripts/build_003.js",
+    "build:004": "node scripts/build_004.js"
   }
 }
