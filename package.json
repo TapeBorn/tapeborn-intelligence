@@ -7,6 +7,7 @@
   "type": "commonjs",
   "engines": { "node": ">=20" },
   "scripts": {
-    "build:002": "node scripts/build_002.js"
+    "build:002": "node scripts/build_002.js",
+    "build:003": "node scripts/build_003.js"
   }
 }

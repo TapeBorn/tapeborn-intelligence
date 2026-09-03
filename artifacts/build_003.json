@@ -1,0 +1,91 @@
+{
+  "ok": true,
+  "rpc": "https://rpc.testnet.arc.io",
+  "chainHead": 60244428,
+  "block": {
+    "requestedTag": "latest",
+    "number": 60244429,
+    "hash": "0xb496a522d6b392f665890007271c5a20ff14230cb9ad82e0bdba390926481590",
+    "parentHash": "0x50054129d3dc2573d85644fc906a6436985901ca7d485ec19e1f4cf2e11d1cdd",
+    "timestamp": 1788436429,
+    "miner": "0xa693cc18aa09d33dd388013b7a02e5ff863b8760",
+    "gasUsed": 1100298,
+    "gasLimit": 30000000,
+    "baseFeePerGas": 20000000000,
+    "size": 3928,
+    "txCount": 14
+  },
+  "txSample": [
+    {
+      "hash": "0x95269eb1287338e1ef6125045571ed9af983c9fb3b0403b11a584a4eb66968b5",
+      "from": "0x901dded4275410c20fe65dccdf6ea1a763312236",
+      "to": "0x363cc75a89ae5673b427a1fa98afc48ffde7ba43",
+      "valueWei": "0x6f05b59d3b20000",
+      "valueArc": "0.5",
+      "nonce": 980,
+      "gas": 250000,
+      "gasPrice": 30360000000,
+      "inputLength": 72,
+      "blockNumber": 60244429,
+      "transactionIndex": 0
+    },
+    {
+      "hash": "0x28244babc4508965ed9cec76984e5cb359be0984209a982f975b2fc263ebb031",
+      "from": "0x654c4a562679790054d160188df7e8d7e1913da2",
+      "to": "0xc5c68144edac2e1872f744c2b07acc5a78f6e63e",
+      "valueWei": "0xde0b6b3a7640000",
+      "valueArc": "1",
+      "nonce": 766,
+      "gas": 77529,
+      "gasPrice": 30360000000,
+      "inputLength": 8,
+      "blockNumber": 60244429,
+      "transactionIndex": 1
+    },
+    {
+      "hash": "0x31e5134f70c1c1f614d5a36976280ab05ab0a1c6243e453879cf8483503fc3c1",
+      "from": "0x532f9dbe4559adf9962551633496fe4703994c9d",
+      "to": "0x3600000000000000000000000000000000000000",
+      "valueWei": "0x0",
+      "valueArc": "0",
+      "nonce": 470,
+      "gas": 100000,
+      "gasPrice": 26312000000,
+      "inputLength": 136,
+      "blockNumber": 60244429,
+      "transactionIndex": 2
+    },
+    {
+      "hash": "0xcfd517c8ed586f233a4fb6d8c620110f5eeb4d15d580b584d0a9522991620f64",
+      "from": "0x357f8bb621f954bb474883ed83ddd5adc8fafe7f",
+      "to": "0x3600000000000000000000000000000000000000",
+      "valueWei": "0x0",
+      "valueArc": "0",
+      "nonce": 12258,
+      "gas": 100000,
+      "gasPrice": 26312000000,
+      "inputLength": 136,
+      "blockNumber": 60244429,
+      "transactionIndex": 3
+    },
+    {
+      "hash": "0xf89403fa74f9840be35f3f370416d26d3a8da496bc187423e14befc3a3553b9f",
+      "from": "0xdc006be4ce80bc571abb5051f41fecd8954d8137",
+      "to": "0x3600000000000000000000000000000000000000",
+      "valueWei": "0x0",
+      "valueArc": "0",
+      "nonce": 667,
+      "gas": 100000,
+      "gasPrice": 26312000000,
+      "inputLength": 136,
+      "blockNumber": 60244429,
+      "transactionIndex": 4
+    }
+  ],
+  "txSampleStats": {
+    "sampleSize": 5,
+    "totalValueArc": 1.5,
+    "contractCreations": 0,
+    "withCalldata": 5
+  }
+}

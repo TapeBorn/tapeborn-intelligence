@@ -20,7 +20,8 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 | ID | Milestone | Status |
 |---|---|---|
 | BUILD_001 | Genesis Trace | DONE |
-| BUILD_002 | Arc Connection | DONE |
+| BUILD_002 | Arc Connection | DONE
+| BUILD_003 | Block Reader | DONE |
 | BUILD_003 | Block Reader | PLANNED |
 | BUILD_004 | Transaction Reader | PLANNED |
 | BUILD_005 | Event Reader | PLANNED |
