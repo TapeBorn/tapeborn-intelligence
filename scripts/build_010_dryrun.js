@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const { getBlockNumber } = require("../src/orchestrator/arc");
 const { scanBlocks } = require("../src/signal/engine");
+const { buildMetadata } = require("../src/metadata");
 
 (async () => {
   try {
@@ -22,20 +23,9 @@ const { scanBlocks } = require("../src/signal/engine");
     const signal = signals[0];
 
     // Siapkan metadata
-    const metadata = {
-      name: "Signal Artifact #1",
-      description: signal.evidence.description,
-      chain: "Arc Testnet",
-      chainId: 5042002,
-      block: signal.data.blockNumber,
-      txHash: signal.evidence.txHash,
-      signalId: signal.id,
-      signalType: signal.type,
-      confidence: signal.confidence,
-      version: signal.version,
-      timestamp: signal.timestamp,
-    };
-
+    // Siapkan metadata menggunakan BUILD_011 schema
+    const blockData = { number: signal.data.blockNumber };
+    const metadata = buildMetadata(signal, blockData, { artifactNumber: 1 });
     const metadataURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString("base64")}`;
 
     // Simulasi deployment dan mint
