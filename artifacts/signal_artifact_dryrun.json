@@ -3,17 +3,16 @@
   "tokenId": 1,
   "metadata": {
     "name": "Signal Artifact #1",
-    "description": "Signal Artifact #1: Transfer of 59.75 USDC from 0x1d91031f... to 0x7c4a655b...",
-    "signalId": "sig_39b7cd53",
-    "signalType": "large_transfer",
+    "description": "Signal Artifact #1: Contract created by 0x5749871e... (input length 7810)",
+    "signalId": "sig_fa50247c",
+    "signalType": "contract_creation",
     "provenance": {
       "chain": "Arc Testnet",
       "chainId": 5042002,
-      "block": 60356228,
-      "sourceTransaction": "0xb76d2ad722f4462c1ec64af039db306a4ba1033a44409d19154b7dfdc7abfba7",
-      "timestamp": "2026-09-04T04:38:26.643Z",
-      "from": "0x1d91031f52e927d704ac8d28d42b1d6ddbf928ee",
-      "to": "0x7c4a655b9f1cd22412c88a9c49db4b9d3fac5fd0"
+      "block": 60391960,
+      "sourceTransaction": "0x7327c731faac958eaf09fac5cbbc210cc5cafb2fe1090ac25e81bb2192f5d7d5",
+      "timestamp": "2026-09-04T09:47:44.080Z",
+      "from": "0x5749871ea4c713b90631c54c652f0edcfa814522"
     },
     "signal": {
       "confidence": 0.8,
@@ -22,24 +21,24 @@
     "evidence": [
       {
         "type": "transaction",
-        "value": "0xb76d2ad722f4462c1ec64af039db306a4ba1033a44409d19154b7dfdc7abfba7",
+        "value": "0x7327c731faac958eaf09fac5cbbc210cc5cafb2fe1090ac25e81bb2192f5d7d5",
         "description": "Source transaction hash"
       },
       {
         "type": "block",
-        "value": "0x398f684",
+        "value": "0x3998218",
         "description": "Block number where signal was detected"
       },
       {
-        "type": "valueUsdc",
-        "value": 59.7492,
-        "description": "USDC value transferred"
+        "type": "inputLength",
+        "value": 7810,
+        "description": "Transaction input length in bytes"
       }
     ],
     "schemaVersion": "v1.0.0",
-    "generatedAt": "2026-09-04T04:38:27.545Z"
+    "generatedAt": "2026-09-04T09:47:44.902Z"
   },
-  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJTaWduYWwgQXJ0aWZhY3QgIzE6IFRyYW5zZmVyIG9mIDU5Ljc1IFVTREMgZnJvbSAweDFkOTEwMzFmLi4uIHRvIDB4N2M0YTY1NWIuLi4iLCJzaWduYWxJZCI6InNpZ18zOWI3Y2Q1MyIsInNpZ25hbFR5cGUiOiJsYXJnZV90cmFuc2ZlciIsInByb3ZlbmFuY2UiOnsiY2hhaW4iOiJBcmMgVGVzdG5ldCIsImNoYWluSWQiOjUwNDIwMDIsImJsb2NrIjo2MDM1NjIyOCwic291cmNlVHJhbnNhY3Rpb24iOiIweGI3NmQyYWQ3MjJmNDQ2MmMxZWM2NGFmMDM5ZGIzMDZhNGJhMTAzM2E0NDQwOWQxOTE1NGI3ZGZkYzdhYmZiYTciLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTA0VDA0OjM4OjI2LjY0M1oiLCJmcm9tIjoiMHgxZDkxMDMxZjUyZTkyN2Q3MDRhYzhkMjhkNDJiMWQ2ZGRiZjkyOGVlIiwidG8iOiIweDdjNGE2NTViOWYxY2QyMjQxMmM4OGE5YzQ5ZGI0YjlkM2ZhYzVmZDAifSwic2lnbmFsIjp7ImNvbmZpZGVuY2UiOjAuOCwidmVyc2lvbiI6InYwIn0sImV2aWRlbmNlIjpbeyJ0eXBlIjoidHJhbnNhY3Rpb24iLCJ2YWx1ZSI6IjB4Yjc2ZDJhZDcyMmY0NDYyYzFlYzY0YWYwMzlkYjMwNmE0YmExMDMzYTQ0NDA5ZDE5MTU0YjdkZmRjN2FiZmJhNyIsImRlc2NyaXB0aW9uIjoiU291cmNlIHRyYW5zYWN0aW9uIGhhc2gifSx7InR5cGUiOiJibG9jayIsInZhbHVlIjoiMHgzOThmNjg0IiwiZGVzY3JpcHRpb24iOiJCbG9jayBudW1iZXIgd2hlcmUgc2lnbmFsIHdhcyBkZXRlY3RlZCJ9LHsidHlwZSI6InZhbHVlVXNkYyIsInZhbHVlIjo1OS43NDkyLCJkZXNjcmlwdGlvbiI6IlVTREMgdmFsdWUgdHJhbnNmZXJyZWQifV0sInNjaGVtYVZlcnNpb24iOiJ2MS4wLjAiLCJnZW5lcmF0ZWRBdCI6IjIwMjYtMDktMDRUMDQ6Mzg6MjcuNTQ1WiJ9",
+  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJTaWduYWwgQXJ0aWZhY3QgIzE6IENvbnRyYWN0IGNyZWF0ZWQgYnkgMHg1NzQ5ODcxZS4uLiAoaW5wdXQgbGVuZ3RoIDc4MTApIiwic2lnbmFsSWQiOiJzaWdfZmE1MDI0N2MiLCJzaWduYWxUeXBlIjoiY29udHJhY3RfY3JlYXRpb24iLCJwcm92ZW5hbmNlIjp7ImNoYWluIjoiQXJjIFRlc3RuZXQiLCJjaGFpbklkIjo1MDQyMDAyLCJibG9jayI6NjAzOTE5NjAsInNvdXJjZVRyYW5zYWN0aW9uIjoiMHg3MzI3YzczMWZhYWM5NThlYWYwOWZhYzVjYmJjMjEwY2M1Y2FmYjJmZTEwOTBhYzI1ZTgxYmIyMTkyZjVkN2Q1IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wNFQwOTo0Nzo0NC4wODBaIiwiZnJvbSI6IjB4NTc0OTg3MWVhNGM3MTNiOTA2MzFjNTRjNjUyZjBlZGNmYTgxNDUyMiJ9LCJzaWduYWwiOnsiY29uZmlkZW5jZSI6MC44LCJ2ZXJzaW9uIjoidjAifSwiZXZpZGVuY2UiOlt7InR5cGUiOiJ0cmFuc2FjdGlvbiIsInZhbHVlIjoiMHg3MzI3YzczMWZhYWM5NThlYWYwOWZhYzVjYmJjMjEwY2M1Y2FmYjJmZTEwOTBhYzI1ZTgxYmIyMTkyZjVkN2Q1IiwiZGVzY3JpcHRpb24iOiJTb3VyY2UgdHJhbnNhY3Rpb24gaGFzaCJ9LHsidHlwZSI6ImJsb2NrIiwidmFsdWUiOiIweDM5OTgyMTgiLCJkZXNjcmlwdGlvbiI6IkJsb2NrIG51bWJlciB3aGVyZSBzaWduYWwgd2FzIGRldGVjdGVkIn0seyJ0eXBlIjoiaW5wdXRMZW5ndGgiLCJ2YWx1ZSI6NzgxMCwiZGVzY3JpcHRpb24iOiJUcmFuc2FjdGlvbiBpbnB1dCBsZW5ndGggaW4gYnl0ZXMifV0sInNjaGVtYVZlcnNpb24iOiJ2MS4wLjAiLCJnZW5lcmF0ZWRBdCI6IjIwMjYtMDktMDRUMDk6NDc6NDQuOTAyWiJ9",
   "txHash": "0x00000000000000000000000000000000000000000000000000000000deadbeef",
   "simulated": true,
   "note": "Dry run — contract not actually deployed. Set DEV_WALLET_PRIVATE_KEY to mint for real."

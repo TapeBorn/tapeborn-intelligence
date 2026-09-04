@@ -1,0 +1,71 @@
+{
+  "collection": {
+    "name": "Signal Artifacts / ARC / 001",
+    "symbol": "SIG",
+    "description": "TapeBorn Genesis Collection — on-chain intelligence artifacts from Arc Testnet. Each token represents a verified, deterministic signal with full provenance and evidence.",
+    "chain": "Arc Testnet",
+    "chainId": 5042002,
+    "genesisSupply": 1,
+    "maxSupply": null,
+    "mintingPolicy": "Admin-only via BUILD_010 pipeline. Additional tokens can be minted by the deployer wallet for verified signals.",
+    "tokenIdStart": 0,
+    "ownershipModel": "Deployer wallet (0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f) has minting authority. No renouncement planned at genesis.",
+    "provenanceModel": "Each token ID maps to a unique deterministic Signal ID (sig_<hash>). The Signal ID is derived from the source transaction, block, and signal type.",
+    "metadataSchema": "v1.0.0",
+    "artifactRelationship": "Signal ID ↔ Token ID is 1:1. Provenance source transaction is distinct from NFT mint transaction.",
+    "deployedAt": "2026-09-04T03:20:56.962Z",
+    "contractAddress": "0x80B87fa686C8FC91A5252854E82ea282c1B6b814",
+    "deployerAddress": "0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f",
+    "deploymentTx": "0x8dec28c1a587c2a534433f41a4e2e613f44fc5313c1de8c993c0855b85e9537c",
+    "mintTx": "0x3d2bad4ffb055841ebc52625eaf5eb5ea273d2bea3b8051e83ebd41723ca40ed",
+    "tokenId": 0,
+    "signalId": "sig_454539d0",
+    "sourceTx": "0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587",
+    "sourceBlock": 60347218,
+    "status": "Genesis complete. Ready for future signal artifacts."
+  },
+  "metadataSchema": {
+    "version": "v1.0.0",
+    "fields": {
+      "name": "string",
+      "description": "string",
+      "signalId": "string (deterministic)",
+      "signalType": "string",
+      "provenance": {
+        "chain": "string",
+        "chainId": "number",
+        "block": "number",
+        "sourceTransaction": "string (0x...)",
+        "timestamp": "string (ISO, optional)",
+        "from": "string (optional)",
+        "to": "string (optional)",
+        "contractAddress": "string (optional)"
+      },
+      "signal": {
+        "confidence": "number",
+        "version": "string"
+      },
+      "evidence": [
+        {
+          "type": "string",
+          "value": "string or number",
+          "description": "string"
+        }
+      ],
+      "schemaVersion": "string",
+      "generatedAt": "string (ISO)"
+    }
+  },
+  "nextSteps": [
+    "BUILD_016: Launch — public product + verified contracts + documentation",
+    "Mainnet readiness: update chainId and RPC in src/orchestrator/networks.js",
+    "Mainnet deployment: create dedicated wallet, run preflight, deploy",
+    "Post-launch: measure usage, improve signals, evaluate new chains"
+  ],
+  "notes": [
+    "Genesis supply is intentionally minimal (1 token) to validate the artifact pipeline.",
+    "Additional tokens can be minted as new signals are detected and verified.",
+    "No token sale or public minting is planned at this stage.",
+    "All metadata is on-chain via data URIs."
+  ]
+}

@@ -13,6 +13,27 @@ NFTs are the artifact layer, not the entire product. The core value is the intel
 - **Data layer:** JSON-RPC + (later) indexer
 - **Artifact layer:** ERC-721 / ERC-1155
 
+## Genesis Collection
+
+| Property | Value |
+|---|---|
+| Collection name | Signal Artifacts / ARC / 001 |
+| Symbol | SIG |
+| Genesis supply | 1 (Token ID 0) |
+| Max supply | Unlimited (admin-mint only) |
+| Minting policy | Admin-only via BUILD_010 pipeline |
+| Token ID | Sequential, starting at 0 |
+| Contract address | `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` |
+| Deployer | `0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f` |
+| Deployment TX | `0x8dec28c1a587c2a534433f41a4e2e613f44fc5313c1de8c993c0855b85e9537c` |
+| Mint TX | `0x3d2bad4ffb055841ebc52625eaf5eb5ea273d2bea3b8051e83ebd41723ca40ed` |
+| Signal ID | `sig_454539d0` |
+| Source TX | `0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587` |
+| Source Block | 60347218 |
+| Metadata schema | v1.0.0 |
+
+See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for full parameters and provenance.
+
 ## Deployment Checklist (Mainnet)
 
 Before deploying to Arc Mainnet, complete the following checklist:
@@ -72,15 +93,15 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 | BUILD_006 | USDC Flow | DONE |
 | BUILD_007 | Wallet Activity | DONE |
 | BUILD_008 | Signal Engine v0 | DONE |
-| BUILD_009 | Signal Feed | PLANNED |
-| BUILD_010 | First Signal Artifact | DONE (dry-run) |
-| BUILD_011 | Metadata System | PLANNED |
-| BUILD_012 | Public Dashboard | PLANNED |
-| BUILD_013 | Reliability | PLANNED |
-| BUILD_014 | Arc Mainnet Readiness | PLANNED |
-| BUILD_015 | Genesis Collection | PLANNED |
-| BUILD_016 | Launch | PLANNED |
-| BUILD_017 | Post-launch | PLANNED |
+|| BUILD_009 | Signal Feed | DONE |
+|| BUILD_010 | First Signal Artifact | DONE |
+|| BUILD_011 | Metadata System | DONE |
+|| BUILD_012 | Public Dashboard | DONE |
+|| BUILD_013 | Reliability | DONE |
+|| BUILD_014 | Arc Mainnet Readiness | DONE |
+|| BUILD_015 | Genesis Collection | DONE |
+|| BUILD_016 | Launch | PLANNED |
+|| BUILD_017 | Post-launch | PLANNED |
 
 ## Build
 

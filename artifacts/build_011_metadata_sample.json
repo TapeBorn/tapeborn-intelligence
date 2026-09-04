@@ -1,20 +1,18 @@
 {
-  "generatedAt": "2026-09-04T04:38:25.181Z",
-  "sampleSize": 5,
+  "generatedAt": "2026-09-04T09:47:42.330Z",
+  "sampleSize": 2,
   "metadata": [
     {
       "name": "Signal Artifact #1",
-      "description": "Signal Artifact #1: Transfer of 292.89 USDC from 0xec04cb1a... to 0x911b4000...",
-      "signalId": "sig_9a36c2d4",
-      "signalType": "large_transfer",
+      "description": "Signal Artifact #1: Wallet 0xb327b2c1... sent 6 transactions in block 0x3998213",
+      "signalId": "sig_724d2489",
+      "signalType": "high_frequency_wallet",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60356225,
-        "sourceTransaction": "0x0e57e29a0697cf093c97a08dcfaab853864e383422fab1ef030da489e91988d2",
-        "timestamp": "2026-09-04T04:38:24.475Z",
-        "from": "0xec04cb1ab6c3717944e65a45fe54eb043ce55ccf",
-        "to": "0x911b4000d3422f482f4062a913885f7b035382df"
+        "block": 60391955,
+        "sourceTransaction": null,
+        "timestamp": "2026-09-04T09:47:41.409Z"
       },
       "signal": {
         "confidence": 0.8,
@@ -22,74 +20,31 @@
       },
       "evidence": [
         {
-          "type": "transaction",
-          "value": "0x0e57e29a0697cf093c97a08dcfaab853864e383422fab1ef030da489e91988d2",
-          "description": "Source transaction hash"
-        },
-        {
           "type": "block",
-          "value": "0x398f681",
+          "value": "0x3998213",
           "description": "Block number where signal was detected"
         },
         {
-          "type": "valueUsdc",
-          "value": 292.8851284798872,
-          "description": "USDC value transferred"
+          "type": "txCount",
+          "value": 6,
+          "description": "Number of transactions in block from same sender"
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:38:25.180Z"
+      "generatedAt": "2026-09-04T09:47:42.330Z"
     },
     {
       "name": "Signal Artifact #2",
-      "description": "Signal Artifact #2: Transfer of 185.40 USDC from 0x2c356764... to 0x911b4000...",
-      "signalId": "sig_4b8314a4",
-      "signalType": "large_transfer",
-      "provenance": {
-        "chain": "Arc Testnet",
-        "chainId": 5042002,
-        "block": 60356225,
-        "sourceTransaction": "0xf30cb59cc5e3271482d9ff7335091f90132381c1ef8c815b38a75a74aca377cc",
-        "timestamp": "2026-09-04T04:38:24.475Z",
-        "from": "0x2c35676472e882ad5a85541dbf0e95af61237f51",
-        "to": "0x911b4000d3422f482f4062a913885f7b035382df"
-      },
-      "signal": {
-        "confidence": 0.8,
-        "version": "v0"
-      },
-      "evidence": [
-        {
-          "type": "transaction",
-          "value": "0xf30cb59cc5e3271482d9ff7335091f90132381c1ef8c815b38a75a74aca377cc",
-          "description": "Source transaction hash"
-        },
-        {
-          "type": "block",
-          "value": "0x398f681",
-          "description": "Block number where signal was detected"
-        },
-        {
-          "type": "valueUsdc",
-          "value": 185.39766709616853,
-          "description": "USDC value transferred"
-        }
-      ],
-      "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:38:25.180Z"
-    },
-    {
-      "name": "Signal Artifact #3",
-      "description": "Signal Artifact #3: Contract created by 0x739cbff9... (input length 6432)",
-      "signalId": "sig_4767667a",
+      "description": "Signal Artifact #2: Contract created by 0x5749871e... (input length 7810)",
+      "signalId": "sig_fa50247c",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60356225,
-        "sourceTransaction": "0x9d6f2c501451d28ac605d1d93a224bdd9d22a211063b9cdc0513f33d8708d98f",
-        "timestamp": "2026-09-04T04:38:24.475Z",
-        "from": "0x739cbff9755b0360294bccdd9bf3a522954a1e5a"
+        "block": 60391960,
+        "sourceTransaction": "0x7327c731faac958eaf09fac5cbbc210cc5cafb2fe1090ac25e81bb2192f5d7d5",
+        "timestamp": "2026-09-04T09:47:41.914Z",
+        "from": "0x5749871ea4c713b90631c54c652f0edcfa814522"
       },
       "signal": {
         "confidence": 0.8,
@@ -98,98 +53,22 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x9d6f2c501451d28ac605d1d93a224bdd9d22a211063b9cdc0513f33d8708d98f",
+          "value": "0x7327c731faac958eaf09fac5cbbc210cc5cafb2fe1090ac25e81bb2192f5d7d5",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398f681",
+          "value": "0x3998218",
           "description": "Block number where signal was detected"
         },
         {
           "type": "inputLength",
-          "value": 6432,
+          "value": 7810,
           "description": "Transaction input length in bytes"
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:38:25.180Z"
-    },
-    {
-      "name": "Signal Artifact #4",
-      "description": "Signal Artifact #4: Transfer of 59.75 USDC from 0x1d91031f... to 0x7c4a655b...",
-      "signalId": "sig_39b7cd53",
-      "signalType": "large_transfer",
-      "provenance": {
-        "chain": "Arc Testnet",
-        "chainId": 5042002,
-        "block": 60356228,
-        "sourceTransaction": "0xb76d2ad722f4462c1ec64af039db306a4ba1033a44409d19154b7dfdc7abfba7",
-        "timestamp": "2026-09-04T04:38:24.771Z",
-        "from": "0x1d91031f52e927d704ac8d28d42b1d6ddbf928ee",
-        "to": "0x7c4a655b9f1cd22412c88a9c49db4b9d3fac5fd0"
-      },
-      "signal": {
-        "confidence": 0.8,
-        "version": "v0"
-      },
-      "evidence": [
-        {
-          "type": "transaction",
-          "value": "0xb76d2ad722f4462c1ec64af039db306a4ba1033a44409d19154b7dfdc7abfba7",
-          "description": "Source transaction hash"
-        },
-        {
-          "type": "block",
-          "value": "0x398f684",
-          "description": "Block number where signal was detected"
-        },
-        {
-          "type": "valueUsdc",
-          "value": 59.7492,
-          "description": "USDC value transferred"
-        }
-      ],
-      "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:38:25.181Z"
-    },
-    {
-      "name": "Signal Artifact #5",
-      "description": "Signal Artifact #5: Transfer of 157.94 USDC from 0xc52075f5... to 0x7eab7184...",
-      "signalId": "sig_3cfe9896",
-      "signalType": "large_transfer",
-      "provenance": {
-        "chain": "Arc Testnet",
-        "chainId": 5042002,
-        "block": 60356231,
-        "sourceTransaction": "0x5fa727a1ef4c3d9702fcdc16f817e330a4b527babb011e9832c96fa429072fe3",
-        "timestamp": "2026-09-04T04:38:25.081Z",
-        "from": "0xc52075f57f720b9a48c006e38153796f55c54241",
-        "to": "0x7eab7184be6743ec46d38eb865e6af204bd9e7da"
-      },
-      "signal": {
-        "confidence": 0.8,
-        "version": "v0"
-      },
-      "evidence": [
-        {
-          "type": "transaction",
-          "value": "0x5fa727a1ef4c3d9702fcdc16f817e330a4b527babb011e9832c96fa429072fe3",
-          "description": "Source transaction hash"
-        },
-        {
-          "type": "block",
-          "value": "0x398f687",
-          "description": "Block number where signal was detected"
-        },
-        {
-          "type": "valueUsdc",
-          "value": 157.940578,
-          "description": "USDC value transferred"
-        }
-      ],
-      "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:38:25.181Z"
+      "generatedAt": "2026-09-04T09:47:42.330Z"
     }
   ]
 }
