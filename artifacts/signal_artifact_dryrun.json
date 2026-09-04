@@ -3,18 +3,42 @@
   "tokenId": 1,
   "metadata": {
     "name": "Signal Artifact #1",
-    "description": "Contract created by 0xd2d586ab... (input length 9446)",
-    "chain": "Arc Testnet",
-    "chainId": 5042002,
-    "block": 60312225,
-    "txHash": "0x1b5b5b113d163b1bb95fab69df30ff5b6498c5b408e9b2c79e9b92bc4730113e",
-    "signalId": "contract_creation_1788474070583_btep",
+    "description": "Signal Artifact #1: Contract created by 0x61af9241... (input length 9446)",
+    "signalId": "sig_c7d7750d",
     "signalType": "contract_creation",
-    "confidence": 0.8,
-    "version": "v0",
-    "timestamp": "2026-09-03T22:21:10.583Z"
+    "provenance": {
+      "chain": "Arc Testnet",
+      "chainId": 5042002,
+      "block": 60353478,
+      "sourceTransaction": "0x4034dfa7caa9de92dceff2d07283d991065390491eb236888e2c2f88be53bab0",
+      "timestamp": "2026-09-04T04:14:46.199Z",
+      "from": "0x61af924149bc196a7449b9aa09ac4e825aa1136b"
+    },
+    "signal": {
+      "confidence": 0.8,
+      "version": "v0"
+    },
+    "evidence": [
+      {
+        "type": "transaction",
+        "value": "0x4034dfa7caa9de92dceff2d07283d991065390491eb236888e2c2f88be53bab0",
+        "description": "Source transaction hash"
+      },
+      {
+        "type": "block",
+        "value": "0x398ebc6",
+        "description": "Block number where signal was detected"
+      },
+      {
+        "type": "inputLength",
+        "value": 9446,
+        "description": "Transaction input length in bytes"
+      }
+    ],
+    "schemaVersion": "v1.0.0",
+    "generatedAt": "2026-09-04T04:14:47.143Z"
   },
-  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJDb250cmFjdCBjcmVhdGVkIGJ5IDB4ZDJkNTg2YWIuLi4gKGlucHV0IGxlbmd0aCA5NDQ2KSIsImNoYWluIjoiQXJjIFRlc3RuZXQiLCJjaGFpbklkIjo1MDQyMDAyLCJibG9jayI6NjAzMTIyMjUsInR4SGFzaCI6IjB4MWI1YjViMTEzZDE2M2IxYmI5NWZhYjY5ZGYzMGZmNWI2NDk4YzViNDA4ZTliMmM3OWU5YjkyYmM0NzMwMTEzZSIsInNpZ25hbElkIjoiY29udHJhY3RfY3JlYXRpb25fMTc4ODQ3NDA3MDU4M19idGVwIiwic2lnbmFsVHlwZSI6ImNvbnRyYWN0X2NyZWF0aW9uIiwiY29uZmlkZW5jZSI6MC44LCJ2ZXJzaW9uIjoidjAiLCJ0aW1lc3RhbXAiOiIyMDI2LTA5LTAzVDIyOjIxOjEwLjU4M1oifQ==",
+  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJTaWduYWwgQXJ0aWZhY3QgIzE6IENvbnRyYWN0IGNyZWF0ZWQgYnkgMHg2MWFmOTI0MS4uLiAoaW5wdXQgbGVuZ3RoIDk0NDYpIiwic2lnbmFsSWQiOiJzaWdfYzdkNzc1MGQiLCJzaWduYWxUeXBlIjoiY29udHJhY3RfY3JlYXRpb24iLCJwcm92ZW5hbmNlIjp7ImNoYWluIjoiQXJjIFRlc3RuZXQiLCJjaGFpbklkIjo1MDQyMDAyLCJibG9jayI6NjAzNTM0NzgsInNvdXJjZVRyYW5zYWN0aW9uIjoiMHg0MDM0ZGZhN2NhYTlkZTkyZGNlZmYyZDA3MjgzZDk5MTA2NTM5MDQ5MWViMjM2ODg4ZTJjMmY4OGJlNTNiYWIwIiwidGltZXN0YW1wIjoiMjAyNi0wOS0wNFQwNDoxNDo0Ni4xOTlaIiwiZnJvbSI6IjB4NjFhZjkyNDE0OWJjMTk2YTc0NDliOWFhMDlhYzRlODI1YWExMTM2YiJ9LCJzaWduYWwiOnsiY29uZmlkZW5jZSI6MC44LCJ2ZXJzaW9uIjoidjAifSwiZXZpZGVuY2UiOlt7InR5cGUiOiJ0cmFuc2FjdGlvbiIsInZhbHVlIjoiMHg0MDM0ZGZhN2NhYTlkZTkyZGNlZmYyZDA3MjgzZDk5MTA2NTM5MDQ5MWViMjM2ODg4ZTJjMmY4OGJlNTNiYWIwIiwiZGVzY3JpcHRpb24iOiJTb3VyY2UgdHJhbnNhY3Rpb24gaGFzaCJ9LHsidHlwZSI6ImJsb2NrIiwidmFsdWUiOiIweDM5OGViYzYiLCJkZXNjcmlwdGlvbiI6IkJsb2NrIG51bWJlciB3aGVyZSBzaWduYWwgd2FzIGRldGVjdGVkIn0seyJ0eXBlIjoiaW5wdXRMZW5ndGgiLCJ2YWx1ZSI6OTQ0NiwiZGVzY3JpcHRpb24iOiJUcmFuc2FjdGlvbiBpbnB1dCBsZW5ndGggaW4gYnl0ZXMifV0sInNjaGVtYVZlcnNpb24iOiJ2MS4wLjAiLCJnZW5lcmF0ZWRBdCI6IjIwMjYtMDktMDRUMDQ6MTQ6NDcuMTQzWiJ9",
   "txHash": "0x00000000000000000000000000000000000000000000000000000000deadbeef",
   "simulated": true,
   "note": "Dry run — contract not actually deployed. Set DEV_WALLET_PRIVATE_KEY to mint for real."
