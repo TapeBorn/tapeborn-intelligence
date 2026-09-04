@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-09-04T02:36:08.934Z",
+  "generatedAt": "2026-09-04T02:42:18.269Z",
   "sampleSize": 5,
   "metadata": [
     {
       "name": "Signal Artifact #1",
-      "description": "Signal Artifact #1: Contract created by 0x3ee2e36d... (input length 9446)",
-      "signalId": "sig_8f0599bc",
+      "description": "Signal Artifact #1: Contract created by 0xc202ff69... (input length 9446)",
+      "signalId": "sig_cca3c383",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60341989,
-        "timestamp": "2026-09-04T02:36:07.903Z",
-        "sourceTransaction": "0x270035f8c5f29cd7fe1df73a5bfc0e716205f7d69ae406d6d3492bc04638df6b",
-        "from": "0x3ee2e36d7038d4f66a4a7bd33ad1be39dd3c0ee2"
+        "block": 60342709,
+        "sourceTransaction": "0xf6a87fc06871308767df5b1bdb0c05f26a06ccc42c14fd893fc97917ca6a669f",
+        "timestamp": "2026-09-04T02:42:17.380Z",
+        "from": "0xc202ff69044dd28f2e0f1e2f93ab2a4bbb5769d8"
       },
       "signal": {
         "confidence": 0.8,
@@ -22,12 +22,12 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x270035f8c5f29cd7fe1df73a5bfc0e716205f7d69ae406d6d3492bc04638df6b",
+          "value": "0xf6a87fc06871308767df5b1bdb0c05f26a06ccc42c14fd893fc97917ca6a669f",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398bee5",
+          "value": "0x398c1b5",
           "description": "Block number where signal was detected"
         },
         {
@@ -37,20 +37,20 @@
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T02:36:08.933Z"
+      "generatedAt": "2026-09-04T02:42:18.268Z"
     },
     {
       "name": "Signal Artifact #2",
-      "description": "Signal Artifact #2: Contract created by 0x37c8b17e... (input length 9446)",
-      "signalId": "sig_261a7ff6",
+      "description": "Signal Artifact #2: Contract created by 0x6399d370... (input length 9446)",
+      "signalId": "sig_5cb13096",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60341994,
-        "timestamp": "2026-09-04T02:36:08.536Z",
-        "sourceTransaction": "0x83a19871d4a0f6d676d11ff1e3e9c100da9ba0c527d16290887274097520ccaa",
-        "from": "0x37c8b17eb8ac92447c83b0652c8a2022cfb61308"
+        "block": 60342711,
+        "sourceTransaction": "0x26b2f12bca9ed51ccc9aa97274e6643a85b4df024541c24be9c8e61e59955c1c",
+        "timestamp": "2026-09-04T02:42:17.580Z",
+        "from": "0x6399d370ecbf5f38a114a9f89e784b25a20549df"
       },
       "signal": {
         "confidence": 0.8,
@@ -59,12 +59,12 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x83a19871d4a0f6d676d11ff1e3e9c100da9ba0c527d16290887274097520ccaa",
+          "value": "0x26b2f12bca9ed51ccc9aa97274e6643a85b4df024541c24be9c8e61e59955c1c",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398beea",
+          "value": "0x398c1b7",
           "description": "Block number where signal was detected"
         },
         {
@@ -74,20 +74,20 @@
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T02:36:08.933Z"
+      "generatedAt": "2026-09-04T02:42:18.268Z"
     },
     {
       "name": "Signal Artifact #3",
-      "description": "Signal Artifact #3: Contract created by 0x02d3ee19... (input length 9446)",
-      "signalId": "sig_faf93f80",
+      "description": "Signal Artifact #3: Contract created by 0x96bec2df... (input length 9446)",
+      "signalId": "sig_7357ef6f",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60341996,
-        "timestamp": "2026-09-04T02:36:08.733Z",
-        "sourceTransaction": "0x9f4447dd6ece5b11dba2cab64a3b4ef230f54fcf81011abd8a166237bb5b3f9f",
-        "from": "0x02d3ee1974fbdcda621c29db82863aa48fcc96fc"
+        "block": 60342712,
+        "sourceTransaction": "0x9ced0784e463bf36488cbeff25321fa0f9032de039cc60fbe9400a66f8e8033b",
+        "timestamp": "2026-09-04T02:42:17.683Z",
+        "from": "0x96bec2dff9712cfb45598a4768e492c6aef0a327"
       },
       "signal": {
         "confidence": 0.8,
@@ -96,12 +96,12 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x9f4447dd6ece5b11dba2cab64a3b4ef230f54fcf81011abd8a166237bb5b3f9f",
+          "value": "0x9ced0784e463bf36488cbeff25321fa0f9032de039cc60fbe9400a66f8e8033b",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398beec",
+          "value": "0x398c1b8",
           "description": "Block number where signal was detected"
         },
         {
@@ -111,20 +111,20 @@
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T02:36:08.933Z"
+      "generatedAt": "2026-09-04T02:42:18.268Z"
     },
     {
       "name": "Signal Artifact #4",
-      "description": "Signal Artifact #4: Contract created by 0xb26cb25e... (input length 9446)",
-      "signalId": "sig_65a64a16",
+      "description": "Signal Artifact #4: Contract created by 0x9e044c92... (input length 8362)",
+      "signalId": "sig_d5a7d6c0",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60341996,
-        "timestamp": "2026-09-04T02:36:08.733Z",
-        "sourceTransaction": "0xa6f68aacbcf1918a676385d356975b936a6dce57f5938a0eb90c94a06f4b1652",
-        "from": "0xb26cb25ebec9150ec454dd2528e7a3334eb45663"
+        "block": 60342715,
+        "sourceTransaction": "0x589ddf9965528ad07d43d0871dbfbda0a91f73340d811de59abee8396802760b",
+        "timestamp": "2026-09-04T02:42:17.975Z",
+        "from": "0x9e044c92413347a9d1261d5e4b6e6b2da4d397df"
       },
       "signal": {
         "confidence": 0.8,
@@ -133,35 +133,35 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0xa6f68aacbcf1918a676385d356975b936a6dce57f5938a0eb90c94a06f4b1652",
+          "value": "0x589ddf9965528ad07d43d0871dbfbda0a91f73340d811de59abee8396802760b",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398beec",
+          "value": "0x398c1bb",
           "description": "Block number where signal was detected"
         },
         {
           "type": "inputLength",
-          "value": 9446,
+          "value": 8362,
           "description": "Transaction input length in bytes"
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T02:36:08.934Z"
+      "generatedAt": "2026-09-04T02:42:18.269Z"
     },
     {
       "name": "Signal Artifact #5",
-      "description": "Signal Artifact #5: Contract created by 0x83bbb7b1... (input length 9446)",
-      "signalId": "sig_351f8216",
+      "description": "Signal Artifact #5: Contract created by 0xf0d4e455... (input length 47252)",
+      "signalId": "sig_237b4eb8",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60341998,
-        "timestamp": "2026-09-04T02:36:08.933Z",
-        "sourceTransaction": "0x7a747a803d565c5ff2541c7090b1759d5ad7e675fe17abc9ca24e08f551a7044",
-        "from": "0x83bbb7b1c4ac6578853529a3c86e6c894ecddc26"
+        "block": 60342718,
+        "sourceTransaction": "0xddbbe51eb47bd1ac619820c49dcf077b1b8065704e769d7007082451877fbf34",
+        "timestamp": "2026-09-04T02:42:18.268Z",
+        "from": "0xf0d4e4553187873ba21d01da572db58b0a43e06e"
       },
       "signal": {
         "confidence": 0.8,
@@ -170,22 +170,22 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x7a747a803d565c5ff2541c7090b1759d5ad7e675fe17abc9ca24e08f551a7044",
+          "value": "0xddbbe51eb47bd1ac619820c49dcf077b1b8065704e769d7007082451877fbf34",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398beee",
+          "value": "0x398c1be",
           "description": "Block number where signal was detected"
         },
         {
           "type": "inputLength",
-          "value": 9446,
+          "value": 47252,
           "description": "Transaction input length in bytes"
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T02:36:08.934Z"
+      "generatedAt": "2026-09-04T02:42:18.269Z"
     }
   ]
 }

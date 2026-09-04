@@ -46,9 +46,12 @@ function buildProvenance(signal, blockData) {
     chain: CHAIN_CONFIG.arc.name,
     chainId: CHAIN_CONFIG.arc.chainId,
     block: signal.data?.blockNumber ?? blockData?.number ?? null,
-    timestamp: signal.timestamp || new Date().toISOString(),
     sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || null,
   };
+  // Only add timestamp if it's a genuine source/event timestamp
+  if (signal.timestamp) {
+    provenance.timestamp = signal.timestamp;
+  }
   // Add optional fields if available
   if (signal.data?.from) provenance.from = signal.data.from;
   if (signal.data?.to) provenance.to = signal.data.to;
