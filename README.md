@@ -28,7 +28,7 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 | BUILD_007 | Wallet Activity | DONE |
 | BUILD_008 | Signal Engine v0 | DONE |
 | BUILD_009 | Signal Feed | PLANNED |
-| BUILD_010 | First Signal Artifact | PLANNED |
+| BUILD_010 | First Signal Artifact | DONE (dry-run) |
 | BUILD_011 | Metadata System | PLANNED |
 | BUILD_012 | Public Dashboard | PLANNED |
 | BUILD_013 | Reliability | PLANNED |
