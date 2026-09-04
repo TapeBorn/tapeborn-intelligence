@@ -57,11 +57,15 @@ function compileContract(source) {
                     "*": ["abi", "evm.bytecode"],
                 },
             },
-            includePath: path.join(__dirname, "../node_modules"),
-            basePath: path.join(__dirname, "../"),
         },
     };
-    const output = JSON.parse(solc.compile(JSON.stringify(input)));
+    const pathModule = require('path');
+    const output = JSON.parse(solc.compile(JSON.stringify(input), {
+        import: function (importPath) {
+            const fullPath = pathModule.join(__dirname, "../node_modules", importPath);
+            return { contents: fs.readFileSync(fullPath, "utf8") };
+        }
+    }));
     if (output.errors) {
         for (const err of output.errors) {
             console.error(err.formattedMessage || err.message);
