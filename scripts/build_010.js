@@ -101,30 +101,35 @@ function compileContract(source) {
         // Compile kontrak
         console.log("Compiling contract...");
         const { abi, bytecode } = compileContract(contractSource);
-        const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+        const provider = new ethers.JsonRpcProvider(RPC_URL);
         const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
         // Deploy kontrak
         console.log("Deploying SignalArtifact contract...");
         const factory = new ethers.ContractFactory(abi, bytecode, wallet);
         const contract = await factory.deploy();
-        await contract.deployed();
-        console.log(`Contract deployed at: ${contract.address}`);
+        const deployTx = contract.deploymentTransaction();
+        console.log(`Deployment tx: ${deployTx.hash}`);
+        await contract.waitForDeployment();
+        const contractAddress = await contract.getAddress();
+        console.log(`Contract deployed at: ${contractAddress}`);
 
         // Mint token
         console.log("Minting token...");
         const tx = await contract.mint(wallet.address, metadataURI);
         await tx.wait();
         const tokenId = await contract.nextTokenId();
-        console.log(`Token minted! Token ID: ${tokenId - 1}`);
+        const tokenIdNumber = Number(tokenId) - 1;
+        console.log(`Token minted! Token ID: ${tokenIdNumber}`);
 
         // Simpan artefak
         const artifact = {
-            contractAddress: contract.address,
-            tokenId: tokenId - 1,
+            contractAddress: contractAddress,
+            tokenId: tokenIdNumber,
             metadata,
             metadataURI,
             txHash: tx.hash,
+            deployTxHash: deployTx.hash,
         };
         const artifactPath = path.join(__dirname, "../artifacts/signal_artifact.json");
         fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));

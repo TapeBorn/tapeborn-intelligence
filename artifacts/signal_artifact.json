@@ -1,0 +1,44 @@
+{
+  "contractAddress": "0x80B87fa686C8FC91A5252854E82ea282c1B6b814",
+  "tokenId": 0,
+  "metadata": {
+    "name": "Signal Artifact #1",
+    "description": "Signal Artifact #1: Contract created by 0x4ab3d396... (input length 9446)",
+    "signalId": "sig_454539d0",
+    "signalType": "contract_creation",
+    "provenance": {
+      "chain": "Arc Testnet",
+      "chainId": 5042002,
+      "block": 60347218,
+      "sourceTransaction": "0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587",
+      "timestamp": "2026-09-04T03:20:56.388Z",
+      "from": "0x4ab3d3962ca2bccb440d9818356091e7d1311f34"
+    },
+    "signal": {
+      "confidence": 0.8,
+      "version": "v0"
+    },
+    "evidence": [
+      {
+        "type": "transaction",
+        "value": "0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587",
+        "description": "Source transaction hash"
+      },
+      {
+        "type": "block",
+        "value": "0x398d352",
+        "description": "Block number where signal was detected"
+      },
+      {
+        "type": "inputLength",
+        "value": 9446,
+        "description": "Transaction input length in bytes"
+      }
+    ],
+    "schemaVersion": "v1.0.0",
+    "generatedAt": "2026-09-04T03:20:56.962Z"
+  },
+  "metadataURI": "data:application/json;base64,eyJuYW1lIjoiU2lnbmFsIEFydGlmYWN0ICMxIiwiZGVzY3JpcHRpb24iOiJTaWduYWwgQXJ0aWZhY3QgIzE6IENvbnRyYWN0IGNyZWF0ZWQgYnkgMHg0YWIzZDM5Ni4uLiAoaW5wdXQgbGVuZ3RoIDk0NDYpIiwic2lnbmFsSWQiOiJzaWdfNDU0NTM5ZDAiLCJzaWduYWxUeXBlIjoiY29udHJhY3RfY3JlYXRpb24iLCJwcm92ZW5hbmNlIjp7ImNoYWluIjoiQXJjIFRlc3RuZXQiLCJjaGFpbklkIjo1MDQyMDAyLCJibG9jayI6NjAzNDcyMTgsInNvdXJjZVRyYW5zYWN0aW9uIjoiMHgxNWEwNWJhNWMyNTVmYzA1YzFlYmNmZDljNzdkYjk3ZTQ4NjQ2ZTNiOWE3OTdlZDQ3NTU2MTFmOGUwM2UwNTg3IiwidGltZXN0YW1wIjoiMjAyNi0wOS0wNFQwMzoyMDo1Ni4zODhaIiwiZnJvbSI6IjB4NGFiM2QzOTYyY2EyYmNjYjQ0MGQ5ODE4MzU2MDkxZTdkMTMxMWYzNCJ9LCJzaWduYWwiOnsiY29uZmlkZW5jZSI6MC44LCJ2ZXJzaW9uIjoidjAifSwiZXZpZGVuY2UiOlt7InR5cGUiOiJ0cmFuc2FjdGlvbiIsInZhbHVlIjoiMHgxNWEwNWJhNWMyNTVmYzA1YzFlYmNmZDljNzdkYjk3ZTQ4NjQ2ZTNiOWE3OTdlZDQ3NTU2MTFmOGUwM2UwNTg3IiwiZGVzY3JpcHRpb24iOiJTb3VyY2UgdHJhbnNhY3Rpb24gaGFzaCJ9LHsidHlwZSI6ImJsb2NrIiwidmFsdWUiOiIweDM5OGQzNTIiLCJkZXNjcmlwdGlvbiI6IkJsb2NrIG51bWJlciB3aGVyZSBzaWduYWwgd2FzIGRldGVjdGVkIn0seyJ0eXBlIjoiaW5wdXRMZW5ndGgiLCJ2YWx1ZSI6OTQ0NiwiZGVzY3JpcHRpb24iOiJUcmFuc2FjdGlvbiBpbnB1dCBsZW5ndGggaW4gYnl0ZXMifV0sInNjaGVtYVZlcnNpb24iOiJ2MS4wLjAiLCJnZW5lcmF0ZWRBdCI6IjIwMjYtMDktMDRUMDM6MjA6NTYuOTYyWiJ9",
+  "txHash": "0x3d2bad4ffb055841ebc52625eaf5eb5ea273d2bea3b8051e83ebd41723ca40ed",
+  "deployTxHash": "0x8dec28c1a587c2a534433f41a4e2e613f44fc5313c1de8c993c0855b85e9537c"
+}
