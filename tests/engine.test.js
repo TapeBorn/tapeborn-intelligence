@@ -30,7 +30,7 @@ test('Engine: detectContractCreations returns signals for to=null', () => {
   const signals = detectContractCreations(block);
   assert.ok(signals.length === 1, 'should detect one contract creation');
   assert.ok(signals[0].type === 'contract_creation');
-  assert.ok(signals[0].data.inputLength === 2); // 0x1234 length minus 2
+  assert.ok(signals[0].data.inputLength === 4); // "0x1234".length - 2 = 4
 });
 
 test('Engine: detectHighFrequencyWallets returns signals for frequent wallets', () => {
