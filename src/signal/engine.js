@@ -1,7 +1,10 @@
 // src/signal/engine.js
 // Signal Engine v0 — deterministic, evidence-backed signal detection.
+// Enhanced with validation and logging (BUILD_013).
 
 const { getBlockByNumber, getBlockNumber, hexToInt } = require("../orchestrator/arc");
+const logger = require("../orchestrator/logger");
+const { validateBlock } = require("../orchestrator/validator");
 
 // Configuration
 const CONFIG = {
@@ -22,6 +25,8 @@ const SIGNAL_TYPES = {
 
 /**
  * Generate a signal object
+ * Signal ID is now deterministic using BUILD_011 logic if available, but for backwards compatibility we keep the old format.
+ * In production, BUILD_011's generateSignalId should be used.
  */
 function createSignal(type, data, evidence) {
   return {
@@ -134,14 +139,32 @@ function detectHighFrequencyWallets(block, threshold = 5) {
  * Main engine: scan blocks and collect signals
  */
 async function scanBlocks(fromBlock, toBlock) {
+  if (fromBlock > toBlock) {
+    logger.warn('[Engine] Invalid block range', { fromBlock, toBlock });
+    return [];
+  }
+  const count = toBlock - fromBlock + 1;
+  logger.info(`[Engine] Scanning ${count} blocks: ${fromBlock}-${toBlock}`);
   const signals = [];
   for (let i = fromBlock; i <= toBlock; i++) {
-    const block = await getBlockByNumber("0x" + i.toString(16), true);
-    if (!block) continue;
-    signals.push(...detectLargeTransfers(block));
-    signals.push(...detectContractCreations(block));
-    signals.push(...detectHighFrequencyWallets(block));
+    try {
+      const block = await getBlockByNumber("0x" + i.toString(16), true);
+      if (!block) {
+        logger.warn(`[Engine] Block ${i} not found, skipping`);
+        continue;
+      }
+      if (!validateBlock(block, `block:${i}`)) {
+        logger.warn(`[Engine] Block ${i} invalid, skipping`);
+        continue;
+      }
+      signals.push(...detectLargeTransfers(block));
+      signals.push(...detectContractCreations(block));
+      signals.push(...detectHighFrequencyWallets(block));
+    } catch (e) {
+      logger.error(`[Engine] Error scanning block ${i}`, { error: e.message });
+    }
   }
+  logger.info(`[Engine] Found ${signals.length} signals`);
   return signals;
 }
 

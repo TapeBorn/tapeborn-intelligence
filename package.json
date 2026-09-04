@@ -20,7 +20,8 @@
     "build:010": "node scripts/build_010.js",
     "build:010_dryrun": "node scripts/build_010_dryrun.js",
     "build:011": "node scripts/build_011.js",
-    "build:012": "node scripts/build_012.js"
+    "build:012": "node scripts/build_012.js",
+    "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1",

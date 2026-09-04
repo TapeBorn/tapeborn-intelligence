@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-09-04T04:14:44.634Z",
-  "sampleSize": 1,
+  "generatedAt": "2026-09-04T04:18:19.906Z",
+  "sampleSize": 3,
   "metadata": [
     {
       "name": "Signal Artifact #1",
-      "description": "Signal Artifact #1: Contract created by 0x61af9241... (input length 9446)",
-      "signalId": "sig_c7d7750d",
+      "description": "Signal Artifact #1: Contract created by 0x4c657674... (input length 7542)",
+      "signalId": "sig_7ddf6043",
       "signalType": "contract_creation",
       "provenance": {
         "chain": "Arc Testnet",
         "chainId": 5042002,
-        "block": 60353478,
-        "sourceTransaction": "0x4034dfa7caa9de92dceff2d07283d991065390491eb236888e2c2f88be53bab0",
-        "timestamp": "2026-09-04T04:14:44.343Z",
-        "from": "0x61af924149bc196a7449b9aa09ac4e825aa1136b"
+        "block": 60353894,
+        "sourceTransaction": "0x51b884fe177aa808623b866641678f421a1ba5ae785968033e963b265b7eb705",
+        "timestamp": "2026-09-04T04:18:19.304Z",
+        "from": "0x4c657674aea88dbbde04c0ea0cc24e03bb6942e1"
       },
       "signal": {
         "confidence": 0.8,
@@ -22,22 +22,96 @@
       "evidence": [
         {
           "type": "transaction",
-          "value": "0x4034dfa7caa9de92dceff2d07283d991065390491eb236888e2c2f88be53bab0",
+          "value": "0x51b884fe177aa808623b866641678f421a1ba5ae785968033e963b265b7eb705",
           "description": "Source transaction hash"
         },
         {
           "type": "block",
-          "value": "0x398ebc6",
+          "value": "0x398ed66",
           "description": "Block number where signal was detected"
         },
         {
           "type": "inputLength",
-          "value": 9446,
+          "value": 7542,
           "description": "Transaction input length in bytes"
         }
       ],
       "schemaVersion": "v1.0.0",
-      "generatedAt": "2026-09-04T04:14:44.633Z"
+      "generatedAt": "2026-09-04T04:18:19.905Z"
+    },
+    {
+      "name": "Signal Artifact #2",
+      "description": "Signal Artifact #2: Contract created by 0xc2aa2e10... (input length 8966)",
+      "signalId": "sig_c966a140",
+      "signalType": "contract_creation",
+      "provenance": {
+        "chain": "Arc Testnet",
+        "chainId": 5042002,
+        "block": 60353896,
+        "sourceTransaction": "0xf2719d4507cb0ae476a80e645174b58dc4fc985665eaf3bae46e247438a64469",
+        "timestamp": "2026-09-04T04:18:19.500Z",
+        "from": "0xc2aa2e107d862a2cd1619649039b7dbe4376756d"
+      },
+      "signal": {
+        "confidence": 0.8,
+        "version": "v0"
+      },
+      "evidence": [
+        {
+          "type": "transaction",
+          "value": "0xf2719d4507cb0ae476a80e645174b58dc4fc985665eaf3bae46e247438a64469",
+          "description": "Source transaction hash"
+        },
+        {
+          "type": "block",
+          "value": "0x398ed68",
+          "description": "Block number where signal was detected"
+        },
+        {
+          "type": "inputLength",
+          "value": 8966,
+          "description": "Transaction input length in bytes"
+        }
+      ],
+      "schemaVersion": "v1.0.0",
+      "generatedAt": "2026-09-04T04:18:19.905Z"
+    },
+    {
+      "name": "Signal Artifact #3",
+      "description": "Signal Artifact #3: Contract created by 0xab759858... (input length 11374)",
+      "signalId": "sig_ba83a1fa",
+      "signalType": "contract_creation",
+      "provenance": {
+        "chain": "Arc Testnet",
+        "chainId": 5042002,
+        "block": 60353899,
+        "sourceTransaction": "0xdb80a844925013eaf4de84e6ca82d336d888b5b57dbd7d30c15893a62e27f2c4",
+        "timestamp": "2026-09-04T04:18:19.808Z",
+        "from": "0xab759858eb538e4cff99538d1f6f5cc6bdbed021"
+      },
+      "signal": {
+        "confidence": 0.8,
+        "version": "v0"
+      },
+      "evidence": [
+        {
+          "type": "transaction",
+          "value": "0xdb80a844925013eaf4de84e6ca82d336d888b5b57dbd7d30c15893a62e27f2c4",
+          "description": "Source transaction hash"
+        },
+        {
+          "type": "block",
+          "value": "0x398ed6b",
+          "description": "Block number where signal was detected"
+        },
+        {
+          "type": "inputLength",
+          "value": 11374,
+          "description": "Transaction input length in bytes"
+        }
+      ],
+      "schemaVersion": "v1.0.0",
+      "generatedAt": "2026-09-04T04:18:19.905Z"
     }
   ]
 }
