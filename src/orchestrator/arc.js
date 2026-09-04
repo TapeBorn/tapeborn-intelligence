@@ -1,13 +1,22 @@
 // src/orchestrator/arc.js
 // Arc RPC client (used by BUILD_002 -> BUILD_007). Standard Ethereum JSON-RPC over HTTP.
 // Enhanced with retry, rate limiting, validation, and logging (BUILD_013).
+// Network-aware: uses testnet by default, mainnet only with explicit config (BUILD_014).
 
 const logger = require('./logger');
 const { retry } = require('./retry');
 const { RateLimiter } = require('./rateLimit');
 const { validateBlockNumber, validateBlock, isValidBlockNumber } = require('./validator');
+const { getRpcUrl, getCurrentNetwork, isMainnet, DEFAULT_NETWORK } = require('./networks');
 
-const DEFAULT_RPC = process.env.ARC_RPC_URL || "https://rpc.testnet.arc.io";
+// Use RPC from network config, but allow override via env
+const DEFAULT_RPC = process.env.ARC_RPC_URL || getRpcUrl();
+
+// Log network mode on startup
+logger.info(`[ARC] Network mode: ${DEFAULT_NETWORK} (${getCurrentNetwork().name})`);
+if (isMainnet()) {
+  logger.warn('[ARC] ⚠️ MAINNET MODE ACTIVE — use with extreme caution');
+}
 
 // Global rate limiter instance (10 requests per second)
 const rateLimiter = new RateLimiter({ requestsPerSecond: 10 });

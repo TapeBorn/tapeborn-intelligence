@@ -13,6 +13,51 @@ NFTs are the artifact layer, not the entire product. The core value is the intel
 - **Data layer:** JSON-RPC + (later) indexer
 - **Artifact layer:** ERC-721 / ERC-1155
 
+## Deployment Checklist (Mainnet)
+
+Before deploying to Arc Mainnet, complete the following checklist:
+
+1. **Network Configuration**
+   - [ ] Verify mainnet chain ID (currently placeholder `5042000` — update from official docs)
+   - [ ] Verify mainnet RPC URL (currently placeholder — update from official docs)
+   - [ ] Test RPC connectivity with `npm run preflight`
+
+2. **Wallet & Keys**
+   - [ ] Create a dedicated mainnet deployment wallet (separate from testnet)
+   - [ ] Fund wallet with sufficient USDC for deployment and gas
+   - [ ] Store private key securely (not in repository, use environment variable)
+   - [ ] Set `DEV_WALLET_PRIVATE_KEY` in secure environment (not committed)
+
+3. **Contract Readiness**
+   - [ ] Test contract on testnet (BUILD_010 already deployed)
+   - [ ] Review contract code for production readiness
+   - [ ] Verify contract ownership and admin controls
+   - [ ] Set up multisig or admin wallet if needed
+
+4. **Metadata & Provenance**
+   - [ ] Verify metadata schema v1.0.0 is finalized
+   - [ ] Test provenance and evidence fields with testnet deployment
+   - [ ] Confirm deterministic Signal ID generation
+
+5. **Deployment Plan**
+   - [ ] Run `npm run preflight` — all checks must pass
+   - [ ] Run `npm run test` — all tests must pass
+   - [ ] Run `npm run build:011` — metadata validation must pass
+   - [ ] Run `npm run build:010_dryrun` — dry-run must pass
+   - [ ] Set `ARC_NETWORK=mainnet` before deployment
+   - [ ] Execute `npm run build:010` for real deployment
+
+6. **Post-Deployment**
+   - [ ] Verify contract on block explorer
+   - [ ] Confirm token ID 0 exists
+   - [ ] Verify metadata URI is accessible
+   - [ ] Document deployment transaction hashes
+
+7. **Safety Guards**
+   - [ ] Default network remains testnet (unless `ARC_NETWORK=mainnet` is explicitly set)
+   - [ ] No private keys in source code or commit history
+   - [ ] `.env` files excluded from version control (`.gitignore` must include `.env*`)
+
 ## Milestones
 
 See `MASTER_ROADMAP.md` for the full 17-milestone plan.
