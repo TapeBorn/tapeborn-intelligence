@@ -1,0 +1,153 @@
+{
+  "signals": [
+    {
+      "id": "contract_interaction",
+      "type": "contract_interaction",
+      "description": "Detect when a wallet interacts with a known contract address (e.g., USDC, WETH, or a specific protocol contract) with a transaction containing data.",
+      "deterministic_trigger": "Transaction to address matches a known contract address and input data length > 4 bytes.",
+      "required_evidence": ["evidence.txHash", "evidence.block", "data.contractAddress", "data.inputLength"],
+      "optional_evidence": ["data.from", "data.valueUsdc"],
+      "signal_data_schema": {
+        "from": "string",
+        "to": "string",
+        "blockNumber": "number",
+        "txHash": "string",
+        "inputLength": "number",
+        "contractAddress": "string",
+        "valueUsdc": "number (optional)"
+      },
+      "provenance_fields": ["chain", "chainId", "block", "sourceTransaction", "from", "to"],
+      "confidence_rule": "0.8 if inputLength > 100 else 0.6",
+      "quality_requirements": ["evidence.txHash", "evidence.block", "data.inputLength", "data.contractAddress"],
+      "false_positives": "Wallet sends to contract but input data is just a transfer; still considered interaction.",
+      "signal_id_inputs": ["type", "block", "sourceTransaction", "from"],
+      "test_cases": [
+        {
+          "name": "valid_interaction",
+          "block": {"transactions": [{"from": "0xa", "to": "0xcontract", "hash": "0x1", "input": "0x123456"}]},
+          "expected": true
+        },
+        {
+          "name": "invalid_empty_input",
+          "block": {"transactions": [{"from": "0xa", "to": "0xcontract", "hash": "0x1", "input": "0x"}]},
+          "expected": false
+        },
+        {
+          "name": "invalid_contract_address",
+          "block": {"transactions": [{"from": "0xa", "to": "0xregular", "hash": "0x1", "input": "0x123456"}]},
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "wallet_burst",
+      "type": "wallet_burst",
+      "description": "A wallet sends many transactions in a short time across multiple blocks (e.g., >10 tx within 3 blocks).",
+      "deterministic_trigger": "Count transactions from same sender across a sliding window of 3 blocks, threshold ≥ 10.",
+      "required_evidence": ["evidence.blockRange", "data.sender", "data.txCount"],
+      "optional_evidence": ["data.firstBlock", "data.lastBlock"],
+      "signal_data_schema": {
+        "sender": "string",
+        "txCount": "number",
+        "firstBlock": "number",
+        "lastBlock": "number",
+        "blockRange": [{"start": "number", "end": "number"}]
+      },
+      "provenance_fields": ["chain", "chainId", "sourceTransaction (optional)"],
+      "confidence_rule": "0.9 if txCount > 20 else 0.7",
+      "quality_requirements": ["data.txCount", "data.sender"],
+      "false_positives": "Legitimate high-frequency trading bots.",
+      "signal_id_inputs": ["type", "sender", "firstBlock"],
+      "test_cases": [
+        {
+          "name": "valid_burst",
+          "blocks": [
+            {"number": "0x1", "transactions": [{"from": "0xa"}]},
+            {"number": "0x2", "transactions": [{"from": "0xa"}, {"from": "0xa"}]},
+            {"number": "0x3", "transactions": [{"from": "0xa"}, {"from": "0xa"}, {"from": "0xa"}]}
+          ],
+          "expected": true
+        },
+        {
+          "name": "invalid_low_count",
+          "blocks": [
+            {"number": "0x1", "transactions": [{"from": "0xa"}]},
+            {"number": "0x2", "transactions": [{"from": "0xa"}]}
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "token_flow_anomaly",
+      "type": "token_flow_anomaly",
+      "description": "A token (e.g., USDC) moves from a dormant wallet to an active wallet with unusual volume relative to historical average.",
+      "deterministic_trigger": "USDC transfer > 2x the chain's average transfer volume for the last 100 blocks (or > threshold 1000 USDC if historical unavailable).",
+      "required_evidence": ["evidence.txHash", "evidence.block", "data.from", "data.to", "data.valueUsdc"],
+      "optional_evidence": ["data.averageVolume"],
+      "signal_data_schema": {
+        "from": "string",
+        "to": "string",
+        "valueUsdc": "number",
+        "averageVolume": "number",
+        "blockNumber": "number",
+        "txHash": "string"
+      },
+      "provenance_fields": ["chain", "chainId", "block", "sourceTransaction", "from", "to"],
+      "confidence_rule": "0.8 if valueUsdc > 2 * averageVolume else 0.6",
+      "quality_requirements": ["evidence.txHash", "evidence.block", "data.valueUsdc", "data.from"],
+      "false_positives": "Whale moving funds to exchange; still a valid signal.",
+      "signal_id_inputs": ["type", "block", "sourceTransaction", "from", "to"],
+      "test_cases": [
+        {
+          "name": "valid_anomaly",
+          "block": {"transactions": [{"from": "0xa", "to": "0xb", "value": "0x56bc75e2d63100000", "hash": "0x1"}]},
+          "averageVolume": 500,
+          "expected": true
+        },
+        {
+          "name": "invalid_normal_flow",
+          "block": {"transactions": [{"from": "0xa", "to": "0xb", "value": "0x1", "hash": "0x1"}]},
+          "averageVolume": 500,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "address_reactivation",
+      "type": "address_reactivation",
+      "description": "An address that has been inactive for >100 blocks sends its first transaction.",
+      "deterministic_trigger": "Sender address has no prior transactions in the last 100 blocks and now sends a transaction.",
+      "required_evidence": ["evidence.txHash", "evidence.block", "data.from", "data.lastSeenBlock"],
+      "optional_evidence": ["data.interval"],
+      "signal_data_schema": {
+        "from": "string",
+        "blockNumber": "number",
+        "txHash": "string",
+        "lastSeenBlock": "number",
+        "interval": "number"
+      },
+      "provenance_fields": ["chain", "chainId", "block", "sourceTransaction", "from"],
+      "confidence_rule": "0.9 if interval > 500 else 0.7",
+      "quality_requirements": ["evidence.txHash", "evidence.block", "data.from", "data.lastSeenBlock"],
+      "false_positives": "New address first appears; but that's also a reactivation from genesis.",
+      "signal_id_inputs": ["type", "block", "sourceTransaction", "from"],
+      "test_cases": [
+        {
+          "name": "valid_reactivation",
+          "block": {"transactions": [{"from": "0xa", "hash": "0x1"}]},
+          "lastSeenBlock": 0,
+          "currentBlock": 101,
+          "expected": true
+        },
+        {
+          "name": "invalid_active_address",
+          "block": {"transactions": [{"from": "0xa", "hash": "0x1"}]},
+          "lastSeenBlock": 50,
+          "currentBlock": 60,
+          "expected": false
+        }
+      ]
+    }
+  ]
+}
