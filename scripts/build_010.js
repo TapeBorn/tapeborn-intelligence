@@ -5,9 +5,10 @@ const { ethers } = require("ethers");
 const fs = require("fs");
 const path = require("path");
 const solc = require("solc");
-const { getBlockNumber } = require("../src/orchestrator/arc");
+const { getBlockNumber, getChainId } = require("../src/orchestrator/arc");
 const { scanBlocks } = require("../src/signal/engine");
 const { buildMetadata } = require("../src/metadata");
+const { getCurrentNetwork } = require("../src/orchestrator/networks");
 
 const RPC_URL = "https://rpc.testnet.arc.io";
 const PRIVATE_KEY = process.env.DEV_WALLET_PRIVATE_KEY;
@@ -102,6 +103,18 @@ function compileContract(source) {
         console.log("Compiling contract...");
         const { abi, bytecode } = compileContract(contractSource);
         const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+        // Chain ID verification (BUILD_016 hardening)
+        const currentNetwork = getCurrentNetwork();
+        const onChainId = await provider.getNetwork().then(n => Number(n.chainId));
+        if (onChainId !== currentNetwork.chainId) {
+            console.error(`❌ Chain ID mismatch! Expected ${currentNetwork.chainId} (${currentNetwork.name}) but got ${onChainId}.`);
+            console.error(`   RPC: ${RPC_URL}`);
+            console.error(`   Aborting deployment. Set ARC_NETWORK correctly or use the correct RPC.`);
+            process.exit(1);
+        }
+        console.log(`✅ Chain ID verified: ${onChainId} (matches ${currentNetwork.name})`);
+
         const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
         // Deploy kontrak

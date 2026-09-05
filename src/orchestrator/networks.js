@@ -13,8 +13,8 @@ const NETWORKS = {
   },
   mainnet: {
     name: 'Arc Mainnet',
-    chainId: 5042000, // Placeholder — verify actual mainnet chain ID
-    rpcUrl: 'https://rpc.mainnet.arc.io', // Placeholder — verify actual RPC
+    chainId: 5042, // Official Arc Mainnet chain ID (0x13b2)
+    rpcUrl: 'https://rpc.mainnet.arc.io', // Placeholder — official RPC not yet available (mainnet target Sep 16)
     isMainnet: true,
     symbol: 'USDC',
     description: 'Arc Mainnet — Circle L1 production network',

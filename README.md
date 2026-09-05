@@ -39,7 +39,7 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 Before deploying to Arc Mainnet, complete the following checklist:
 
 1. **Network Configuration**
-   - [ ] Verify mainnet chain ID (currently placeholder `5042000` — update from official docs)
+   - [ ] Verify mainnet chain ID (`5042` — official from Circle/Arc docs)
    - [ ] Verify mainnet RPC URL (currently placeholder — update from official docs)
    - [ ] Test RPC connectivity with `npm run preflight`
 
