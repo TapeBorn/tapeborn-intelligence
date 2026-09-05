@@ -103,6 +103,28 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 || BUILD_016 | Launch | PLANNED |
 || BUILD_017 | Post-launch | PLANNED |
 
+## BUILD_017 — Post-launch Intelligence
+
+**Objective:** Measure usage, improve signals, evaluate new chains.
+
+**Implemented:**
+
+- Usage measurement script (`scripts/build_017_usage.js`) — scans last 100 blocks, aggregates signal types, confidence distribution, evidence availability.
+- Chain evaluation artifact (`artifacts/build_017_chain_evaluation.json`) — architectural analysis for adding EVM chains without rewriting core.
+- No blockchain transactions, no mainnet deployment, no wallet signing.
+
+**Verification:**
+
+```bash
+npm run build:017_usage   # generates usage report
+```
+
+**Known limitations:**
+
+- Usage measurement is runtime snapshot, not persistent historical tracking.
+- Chain evaluation is theoretical; actual multi-chain support requires testing with additional testnet.
+- Metadata schema currently hardcodes Arc Testnet; parameterization is recommended for multi-chain.
+
 ## Build
 
 ```bash

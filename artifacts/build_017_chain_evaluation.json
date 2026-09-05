@@ -1,0 +1,48 @@
+{
+  "evaluation": {
+    "timestamp": "2026-09-05",
+    "purpose": "Evaluate architecture for adding another EVM-compatible chain without rewriting core.",
+    "questions": [
+      {
+        "question": "Can another EVM-compatible chain be added without rewriting the core?",
+        "answer": "YES — core architecture separates chain-specific adapters from signal engine and metadata.",
+        "evidence": "src/orchestrator/networks.js centralizes chain config; src/orchestrator/arc.js abstracts RPC; signal engine consumes normalized data."
+      },
+      {
+        "question": "Which interfaces are chain-specific?",
+        "answer": "RPC client (arc.js), network config (networks.js), chain ID validation, gas/token symbol, block/transaction structure.",
+        "evidence": "src/orchestrator/arc.js uses generic JSON-RPC; networks.js defines chainId, RPC, symbol."
+      },
+      {
+        "question": "Which components are reusable?",
+        "answer": "Signal engine (engine.js), metadata schema (metadata/schema.js), dashboard (build_012.js), artifact pipeline (build_010.js with network config), tests, logging, retry, rate limiting, validation.",
+        "evidence": "All these modules import network config via networks.js; they don't hardcode chain-specific values."
+      },
+      {
+        "question": "Which components require adapters/configuration?",
+        "answer": "RPC client needs endpoint; network config needs chainId, RPC, symbol; chain-ID verification needs expected value; gas estimation may need adjustment.",
+        "evidence": "arc.js uses DEFAULT_RPC from networks.js; build_010.js validates chainId against config."
+      },
+      {
+        "question": "What assumptions currently depend on Arc?",
+        "answer": "USDC as gas token (Arc specific), testnet chain ID 5042002, RPC endpoints, metadata schema referencing Arc Testnet in provenance.",
+        "evidence": "networks.js hardcodes Arc testnet/mainnet; metadata schema uses CHAIN_CONFIG.arc."
+      },
+      {
+        "question": "What would be required for the first additional chain?",
+        "answer": "Add new entry to networks.js (chainId, RPC, symbol, isMainnet). Verify RPC compatibility. Extend chain-ID verification. Update metadata schema to support multiple chains. Test dry-run. No core rewrite needed.",
+        "evidence": "Architecture already supports multi-chain via networks.js; additional chain is a configuration change, not a rewrite."
+      }
+    ],
+    "recommendation": "Architecture is ready for additional EVM chains. First additional chain would be configuration-only with minimal adapter changes.",
+    "blockers": [
+      "No official RPC for Arc Mainnet yet",
+      "Metadata schema currently hardcodes Arc Testnet name; should be parameterized for multi-chain"
+    ],
+    "nextSteps": [
+      "Parameterize metadata schema to use chain name from networks.js instead of hardcoded 'Arc Testnet'.",
+      "Test with a second testnet (e.g., Sepolia) to validate multi-chain architecture.",
+      "Update preflight to verify all configured chains."
+    ]
+  }
+}
