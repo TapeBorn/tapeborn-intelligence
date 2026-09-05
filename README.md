@@ -103,6 +103,33 @@ See `MASTER_ROADMAP.md` for the full 17-milestone plan.
 || BUILD_016 | Launch | PLANNED |
 || BUILD_017 | Post-launch | PLANNED |
 
+## BUILD_018 — Signal Intelligence v1
+
+**Objective:** Improve signal quality, fix known issues, parameterize metadata, add quality/completeness evaluation.
+
+**Implemented:**
+
+- Fixed `high_frequency_wallet` `sourceTransaction` null issue by making it optional in provenance schema.
+- Parameterized metadata network info (chain name/chainId) using `networks.js` instead of hardcoded values.
+- Added `quality` field to signals: `{ status: 'complete' | 'partial', missing: [...] }` based on required evidence per signal type.
+- Enhanced usage report to maintain history (append to `build_017_usage_report.json` as an array).
+- Updated dashboard to display signal quality.
+
+**Verification:**
+
+```bash
+npm test
+npm run build:011
+npm run build:010_dryrun
+npm run build:012
+npm run build:017_usage
+npm run preflight
+```
+
+**Known limitations:**
+
+- Quality evaluation is based on static per-type requirements; may need tuning for new signal types.
+
 ## BUILD_017 — Post-launch Intelligence
 
 **Objective:** Measure usage, improve signals, evaluate new chains.

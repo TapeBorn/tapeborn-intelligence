@@ -52,7 +52,25 @@ async function measureUsage() {
   };
 
   const artifactPath = path.join(__dirname, "../artifacts/build_017_usage_report.json");
-  fs.writeFileSync(artifactPath, JSON.stringify(usageReport, null, 2));
+  // Read existing history if any
+  let history = [];
+  if (fs.existsSync(artifactPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+      if (Array.isArray(existing)) {
+        history = existing;
+      } else {
+        // old format: single object, convert to array
+        history = [existing];
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  // Append new report
+  history.push(usageReport);
+  fs.writeFileSync(artifactPath, JSON.stringify(history, null, 2));
+  console.log(`[BUILD_017] Usage report appended to ${artifactPath}`);
   console.log(`[BUILD_017] Usage report saved to ${artifactPath}`);
   console.log(`  Total signals: ${totalSignals}`);
   console.log(`  Types: ${uniqueTypes.join(", ")}`);

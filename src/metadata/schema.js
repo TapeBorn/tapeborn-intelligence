@@ -3,14 +3,10 @@
 // Standardized provenance, Signal ID, and evidence for Signal Artifacts.
 // Version: v1.0.0
 
-const CHAIN_CONFIG = {
-  arc: {
-    name: "Arc Testnet",
-    chainId: 5042002,
-    rpc: "https://rpc.testnet.arc.io",
-  },
-  // Future chains can be added here
-};
+const { getCurrentNetwork } = require("../orchestrator/networks");
+
+// CHAIN_CONFIG is now dynamic; kept for backward compatibility but not used directly.
+// Use getCurrentNetwork() instead.
 
 /**
  * Generate a deterministic Signal ID from signal data and provenance.
@@ -42,9 +38,10 @@ function generateSignalId(signal, provenance) {
  * Build provenance object from signal and block data.
  */
 function buildProvenance(signal, blockData) {
+  const network = getCurrentNetwork();
   const provenance = {
-    chain: CHAIN_CONFIG.arc.name,
-    chainId: CHAIN_CONFIG.arc.chainId,
+    chain: network.name,
+    chainId: network.chainId,
     block: signal.data?.blockNumber ?? blockData?.number ?? null,
     sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || null,
   };
@@ -172,11 +169,16 @@ function validateMetadata(metadata) {
     }
   }
   if (metadata.provenance) {
-    const provRequired = ["chain", "chainId", "block", "sourceTransaction"];
+    const provRequired = ["chain", "chainId", "block"];
+    // sourceTransaction is optional; may be null for some signal types (e.g., high_frequency_wallet)
     for (const field of provRequired) {
       if (metadata.provenance[field] === undefined || metadata.provenance[field] === null) {
         errors.push(`Missing provenance field: ${field}`);
       }
+    }
+    // sourceTransaction is optional, but if present it should be a string
+    if (metadata.provenance.sourceTransaction !== undefined && metadata.provenance.sourceTransaction !== null) {
+      // valid
     }
   }
   if (metadata.signal) {

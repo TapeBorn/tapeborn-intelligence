@@ -24,11 +24,37 @@ const SIGNAL_TYPES = {
 };
 
 /**
+ * Compute signal quality/completeness based on type and available data/evidence.
+ * Returns an object with 'status' ('complete' or 'partial') and 'missing' array.
+ */
+function computeSignalQuality(type, data, evidence) {
+  const missing = [];
+  const required = {
+    large_transfer: ['evidence.txHash', 'evidence.block', 'data.valueUsdc'],
+    contract_creation: ['evidence.txHash', 'evidence.block', 'data.inputLength'],
+    high_frequency_wallet: ['evidence.block', 'data.txCount'],
+  };
+  const fields = required[type] || [];
+  for (const field of fields) {
+    const parts = field.split('.');
+    let val;
+    if (parts[0] === 'evidence') val = evidence?.[parts[1]];
+    else if (parts[0] === 'data') val = data?.[parts[1]];
+    if (val === undefined || val === null) missing.push(field);
+  }
+  return {
+    status: missing.length === 0 ? 'complete' : 'partial',
+    missing,
+  };
+}
+
+/**
  * Generate a signal object
  * Signal ID is now deterministic using BUILD_011 logic if available, but for backwards compatibility we keep the old format.
  * In production, BUILD_011's generateSignalId should be used.
  */
 function createSignal(type, data, evidence) {
+  const quality = computeSignalQuality(type, data, evidence);
   return {
     id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     type,
@@ -37,6 +63,7 @@ function createSignal(type, data, evidence) {
     evidence,
     confidence: 0.8, // default, can be adjusted per detector
     version: "v0",
+    quality, // added in BUILD_018
   };
 }
 
