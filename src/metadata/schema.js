@@ -193,7 +193,6 @@ function validateMetadata(metadata) {
 }
 
 module.exports = {
-  CHAIN_CONFIG,
   generateSignalId,
   buildProvenance,
   buildEvidence,

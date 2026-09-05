@@ -10,12 +10,18 @@ const { scanBlocks } = require("../src/signal/engine");
 const { buildMetadata } = require("../src/metadata");
 const { getCurrentNetwork } = require("../src/orchestrator/networks");
 
-const RPC_URL = "https://rpc.testnet.arc.io";
+const { getRpcUrl } = require("../src/orchestrator/networks");
+const RPC_URL = getRpcUrl();
 const PRIVATE_KEY = process.env.DEV_WALLET_PRIVATE_KEY;
 if (!PRIVATE_KEY) {
   console.error("ERROR: DEV_WALLET_PRIVATE_KEY environment variable is required.");
   console.error("Set it with: export DEV_WALLET_PRIVATE_KEY=0x...");
   process.exit(1);
+}
+// Dry-run safety: if DRY_RUN=1, skip actual deployment
+const isDryRun = process.env.DRY_RUN === '1' || process.argv.includes('--dry-run');
+if (isDryRun) {
+  console.log("🔬 DRY RUN MODE — No transactions will be sent.");
 }
 
 // Kontrak Solidity
@@ -118,6 +124,29 @@ function compileContract(source) {
         const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
         // Deploy kontrak
+        if (isDryRun) {
+          console.log("🔬 DRY RUN: Skipping actual contract deployment.");
+          const contractAddress = "0x0000000000000000000000000000000000000000";
+          const deployTx = { hash: "0x0000000000000000000000000000000000000000000000000000000000000000" };
+          const tokenIdNumber = 0;
+          const tx = { hash: "0x0000000000000000000000000000000000000000000000000000000000000000" };
+          const artifact = {
+            contractAddress,
+            tokenId: tokenIdNumber,
+            metadata,
+            metadataURI,
+            txHash: tx.hash,
+            deployTxHash: deployTx.hash,
+            simulated: true,
+            note: "Dry run — contract not actually deployed. Set DRY_RUN=0 to deploy for real.",
+          };
+          const artifactPath = path.join(__dirname, "../artifacts/signal_artifact_dryrun.json");
+          fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
+          console.log(`Artifact saved to ${artifactPath}`);
+          console.log("BUILD_010 dry-run completed.");
+          process.exit(0);
+        }
+
         console.log("Deploying SignalArtifact contract...");
         const factory = new ethers.ContractFactory(abi, bytecode, wallet);
         const contract = await factory.deploy();

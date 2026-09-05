@@ -5,6 +5,7 @@
 const { getBlockByNumber, getBlockNumber, hexToInt } = require("../orchestrator/arc");
 const logger = require("../orchestrator/logger");
 const { validateBlock } = require("../orchestrator/validator");
+const { generateSignalId } = require("../metadata/schema");
 
 // Configuration
 const CONFIG = {
@@ -55,8 +56,16 @@ function computeSignalQuality(type, data, evidence) {
  */
 function createSignal(type, data, evidence) {
   const quality = computeSignalQuality(type, data, evidence);
+  // Build provenance-like object for deterministic ID generation
+  const provenance = {
+    block: data?.blockNumber || data?.block || '0',
+    sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+    from: data?.from || evidence?.from || '0x',
+  };
+  // Use deterministic Signal ID from BUILD_011
+  const signalId = generateSignalId({ type, data, evidence }, provenance);
   return {
-    id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    id: signalId,
     type,
     timestamp: new Date().toISOString(),
     data,
