@@ -83,28 +83,29 @@ Before deploying to Arc Mainnet, complete the following checklist:
 
 | Build | Description | Status |
 |-------|-------------|--------|
-| BUILD_001 | Project scaffolding and Arc testnet connection | DONE |
-| BUILD_002 | JSON-RPC data ingestion pipeline | DONE |
-| BUILD_003 | Block and transaction normalization schema | DONE |
-| BUILD_004 | Signal Engine v0 — deterministic signal detection | DONE |
-| BUILD_005 | Signal classification and scoring | DONE |
-| BUILD_006 | Metadata schema v1.0.0 design | DONE |
-| BUILD_007 | ERC-721 contract draft | DONE |
-| BUILD_008 | ERC-1155 contract draft | DONE |
-| BUILD_009 | Provenance and evidence linking | DONE |
-| BUILD_010 | Testnet deployment pipeline | DONE |
-| BUILD_011 | Metadata validation and build scripts | DONE |
-| BUILD_012 | Genesis collection minting (Token ID 0) | DONE |
-| BUILD_013 | Signal artifact verification tooling | DONE |
-| BUILD_014 | Dashboard v0 — signal explorer | DONE |
-| BUILD_015 | API layer for signal queries | DONE |
-| BUILD_016 | Multi-signal batch processing | DONE |
+| BUILD_001 | Initial commit | DONE |
+| BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
+| BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 (4 contract creations in sample) | DONE |
+| BUILD_004 | Transaction reader — 3 tx + receipts, 10 logs decoded at block 60,246,719 | DONE |
+| BUILD_005 | Event reader — decoded 157 Transfer events, 21 Approvals from 227 logs | DONE |
+| BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume across 6 blocks | DONE |
+| BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC volume across 16 blocks | DONE |
+| BUILD_008 | Signal Engine v0 — contract creation detector, 1 signal from 10 blocks | DONE |
+| BUILD_009 | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi | UNVERIFIED |
+| BUILD_010 | First Signal Artifact (dry-run) — generated metadata for contract creation signal | DONE |
+| BUILD_011 | Metadata system — provenance and Signal ID | DONE |
+| BUILD_011.1 | Harden provenance timestamp integrity | DONE |
+| BUILD_012 | Add public signal dashboard | DONE |
+| BUILD_013 | Add reliability layer | DONE |
+| BUILD_014 | Add Arc mainnet readiness | DONE |
+| BUILD_015 | Finalize Genesis Collection | DONE |
+| BUILD_016 | Mainnet readiness and deployment hardening | DONE |
 | BUILD_017 | Post-launch intelligence and chain evaluation | DONE |
 | BUILD_018 | Signal Intelligence v1 | DONE |
-| BUILD_019 | Signal Expansion (4 new signal types) | DONE |
-| BUILD_020 | Agent Interface (read-only) | DONE |
-| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED (intentional gap — documented in MASTER_ROADMAP) |
-| BUILD_022.1 | Mainnet Gate Hardening | DONE |
+| BUILD_019 | Signal Expansion — add 4 new signal types: contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation | DONE |
+| BUILD_020 | Add read-only agent interface | DONE |
+| BUILD_021 | Roadmap Gap Analysis — intentional gap (lihat bagian Notes) | NOT IMPLEMENTED |
+| BUILD_022.1 | Harden mainnet deployment gate | DONE |
 | BUILD_023 | Agent Hardening + Documentation Reconciliation | DONE |
 
 > Full roadmap reference: see [MASTER_ROADMAP.md](MASTER_ROADMAP.md).

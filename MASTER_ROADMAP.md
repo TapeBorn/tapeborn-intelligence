@@ -1,5 +1,4 @@
 # TapeBorn — Master Roadmap
-
 > This file is the canonical reference for all TapeBorn milestones (BUILD_001 through BUILD_023).
 > It was previously referenced in README.md but had not been created until now.
 
@@ -15,7 +14,7 @@
 | BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume across 6 blocks | DONE |
 | BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC volume across 16 blocks | DONE |
 | BUILD_008 | Signal Engine v0 — contract creation detector, 1 signal from 10 blocks | DONE |
-| BUILD_009 | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi | DONE |
+| BUILD_009 | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi | UNVERIFIED |
 | BUILD_010 | First Signal Artifact (dry-run) — generated metadata for contract creation signal | DONE |
 | BUILD_011 | Metadata system — provenance and Signal ID | DONE |
 | BUILD_011.1 | Harden provenance timestamp integrity | DONE |
@@ -28,7 +27,7 @@
 | BUILD_018 | Signal Intelligence v1 | DONE |
 | BUILD_019 | Signal Expansion — add 4 new signal types: contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation | DONE |
 | BUILD_020 | Add read-only agent interface | DONE |
-| BUILD_021 | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi | NOT IMPLEMENTED |
+| BUILD_021 | Roadmap Gap Analysis — intentional gap (lihat bagian Notes) | NOT IMPLEMENTED |
 | BUILD_022.1 | Harden mainnet deployment gate | DONE |
 | BUILD_023 | Agent Hardening + Documentation Reconciliation | DONE |
 
