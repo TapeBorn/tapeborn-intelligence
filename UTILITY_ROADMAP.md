@@ -1,69 +1,24 @@
-# TapeBorn NFT Holder Utility Roadmap
+# UTILITY ROADMAP — Rencana Utility Holder NFT TapeBorn
 
-This document outlines planned utility features for holders of TapeBorn NFTs (Signal Artifacts). All features listed below are in the **PLANNED** stage and are not yet implemented. They are intended to increase holder engagement and provide ongoing value beyond the initial NFT mint.
+Semua item di bawah ini berstatus **PLANNED** dan belum diimplementasi. Tidak ada yang aktif (LIVE) pada saat ini.
 
----
+## 1. Trace-linked Mint Mechanic
+- trait NFT (khususnya Trace) di-generate deterministik dari data on-chain nyata saat mint (tx hash, block number, sinyal yang terdeteksi pada momen itu)
+- Utility: tiap NFT jadi provable on-chain artifact, bukan pixel art generatif kosong
+- Status: PLANNED, prioritas tinggi
+- Catatan: berkaitan langsung dengan Phase D (Deterministic Generator) di roadmap NFT yang sudah ada
 
-## 1. Signal Points System
-
-**Description:**  
-A points-based reward system where holders earn "Signal Points" through on-chain and off-chain activities, such as:
-- Regular dashboard visits or signal viewing
-- Participation in community governance or signaling events
-- Referral of new holders
-- Holding duration or specific NFT traits
-
-**Utility:**  
-Accumulated Signal Points can be used to:
-- Gain whitelist access to future TapeBorn drops or collaborating projects
-- Unlock exclusive features (e.g., advanced signal filters, custom artifact minting)
-- Redeem for limited-edition off-chain rewards (e.g., merch, event tickets)
-
-**Status:** PLANNED  
-**Notes:** Requires integration with the dashboard (BUILD_012/PUBLIC DASHBOARD) and backend tracking of holder interactions.
-
----
-
-## 2. Trace-linked Mint Mechanic
-
-**Description:**  
-Each TapeBorn NFT’s visual and metadata traits are directly derived from verifiable on-chain data at the time of mint, including:
-- The transaction hash that triggered the mint
-- The specific on-chain signal (e.g., a large USDC transfer, a contract interaction) that the NFT represents
-- Block-level data (timestamp, block number) used in generative layers
-
-**Utility:**  
-This ensures that every NFT is a **provable on-chain artifact**—not just a generative art piece. Holders can:
-- Prove the exact on-chain event their NFT represents
-- Trace the NFT’s utility back to real blockchain activity
-- Use the NFT as a verifiable signal marker in other dApps or analytics tools
-
-**Status:** PLANNED  
-**Notes:** Requires technical research into deterministic on-chain metadata generation and verification. May involve upgrades to the metadata system (BUILD_011) and artifact pipeline (BUILD_010+).
-
----
+## 2. Signal Points & Credibility Tier (off-chain)
+- Holder dapat poin dari aktivitas dashboard & lama hold (bukan flip cepat), ditampilkan sebagai tier/badge
+- PENTING: TIDAK ada smart contract gating di tahap ini — murni backend + dashboard display
+- Status: PLANNED
 
 ## 3. Token-gated Agent API Access
+- Holder verifikasi wallet untuk dapat API key dengan rate limit lebih tinggi ke BUILD_020 agent interface
+- Status: DEPRIORITIZED
+- Catatan: Data sinyal generik sudah menjadi komoditas gratis di komunitas Web3 lain; utility ini direposisi untuk B2B (proyek lain), bukan dipasarkan ke holder retail. Lihat item Signal Points & Credibility Tier (off-chain) di atas untuk arah barunya.
 
-**Description:**  
-Holders of TapeBorn NFTs can verify wallet ownership to receive an upgraded API key for the BUILD_020 Agent Interface (read-only HTTP API for signal data), granting:
-- Higher rate limits (e.g., 50 req/sec vs. 10 req/sec for public)
-- Access to additional endpoints or data layers (e.g., raw signal feeds, beta features)
-- Priority signal aggregation or custom webhook configurations
-
-**Utility:**  
-Empowers holders and developers to build on top of TapeBorn’s intelligence layer with fewer restrictions, encouraging ecosystem growth and active use of the NFT as a "key" to premium data access.
-
-**Status:** PLANNED  
-**Notes:** Can be built as an extension of BUILD_020 Agent Interface. Requires wallet-signature verification (e.g., via `eth_sign` or SIWE) and a simple holder-check against the NFT contract.
+*Catatan:* Credibility API untuk proyek NFT lain (B2B) dan auto-gating transfer berdasarkan skor kredibilitas dicatat sebagai FUTURE CONSIDERATION, DITUNDA — alasan: memerlukan audit smart contract profesional dan proses business development yang belum tersedia di tahap proyek saat ini.
 
 ---
-
-### Important Disclaimer
-
-All features listed above are **PLANNED** and not yet implemented. They represent future intentions for the TapeBorn project and should not be interpreted as active utilities. Implementation will depend on community feedback, technical feasibility, and project roadmap priority.
-
-Holders are encouraged to participate in governance discussions (once available) to help shape which utilities are developed first.
-
----
-*UTILITY_ROADMAP.md — Created to document planned holder utility for TapeBorn NFTs.*
+*UTILITY_ROADMAP.md — Rencana utility holder NFT TapeBorn (semua PLANNED, kecuali yang dideprioritaskan).*
