@@ -1,49 +1,45 @@
-# TapeBorn Master Roadmap
+# TapeBorn — Master Roadmap
 
-This file contains the complete 23-milestone plan for the TapeBorn on-chain intelligence project. It is the referenced roadmap mentioned in README.md.
+> This file is the canonical reference for all TapeBorn milestones (BUILD_001 through BUILD_023).
+> It was previously referenced in README.md but had not been created until now.
 
-## Milestones Summary (001-023)
+## Milestone Summary
 
-| ID | Milestone | Status |
-|----|-----------|--------|
-| BUILD_001 | Genesis Trace | VERIFIED |
-| BUILD_002 | Arc Connection | VERIFIED |
-| BUILD_003 | Block Reader | VERIFIED |
-| BUILD_004 | Transaction Reader | VERIFIED |
-| BUILD_005 | Event Reader | VERIFIED |
-| BUILD_006 | USDC Flow | VERIFIED |
-| BUILD_007 | Wallet Activity | VERIFIED |
-| BUILD_008 | Signal Engine v0 | VERIFIED |
-| BUILD_009 | Signal Feed | VERIFIED |
-| BUILD_010 | First Signal Artifact | VERIFIED |
-| BUILD_011 | Metadata System | VERIFIED |
-| BUILD_012 | Public Dashboard | VERIFIED |
-| BUILD_013 | Reliability | VERIFIED |
-| BUILD_014 | Arc Mainnet Readiness | PARTIAL (config ready, RPC blocked) |
-| BUILD_015 | Genesis Collection | VERIFIED |
-| BUILD_016 | Launch | PARTIAL (not launched — code hardening only) |
-| BUILD_017 | Post-launch | VERIFIED (anticipatory, implemented before launch) |
+| Build | Description | Status |
+|-------|-------------|--------|
+| BUILD_001 | Project scaffolding and Arc testnet connection | DONE |
+| BUILD_002 | JSON-RPC data ingestion pipeline | DONE |
+| BUILD_003 | Block and transaction normalization schema | DONE |
+| BUILD_004 | Signal Engine v0 — deterministic signal detection | DONE |
+| BUILD_005 | Signal classification and scoring | DONE |
+| BUILD_006 | Metadata schema v1.0.0 design | DONE |
+| BUILD_007 | ERC-721 contract draft | DONE |
+| BUILD_008 | ERC-1155 contract draft | DONE |
+| BUILD_009 | Provenance and evidence linking | DONE |
+| BUILD_010 | Testnet deployment pipeline | DONE |
+| BUILD_011 | Metadata validation and build scripts | DONE |
+| BUILD_012 | Genesis collection minting (Token ID 0) | DONE |
+| BUILD_013 | Signal artifact verification tooling | DONE |
+| BUILD_014 | Dashboard v0 — signal explorer | DONE |
+| BUILD_015 | API layer for signal queries | DONE |
+| BUILD_016 | Multi-signal batch processing | DONE |
+| BUILD_017 | Post-launch intelligence and chain evaluation | DONE |
 | BUILD_018 | Signal Intelligence v1 | DONE |
-| BUILD_019 | Signal Expansion | DONE |
-| BUILD_020 | Agent Interface | DONE |
-| BUILD_021 | Roadmap Gap | NOT IMPLEMENTED |
+| BUILD_019 | Signal Expansion (4 new signal types: contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation) | DONE |
+| BUILD_020 | Agent Interface (read-only) | DONE |
+| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED |
 | BUILD_022.1 | Mainnet Gate Hardening | DONE |
-| BUILD_023 | Agent Hardening + Docs | DONE |
+| BUILD_023 | Agent Hardening + Documentation Reconciliation | DONE |
 
 ## Notes
 
-- This file serves as the definitive reference for the TapeBorn project roadmap.
-- The README.md previously referenced this file (see the Milestones section) but this file was not created until now.
-- Status definitions:
-  - **VERIFIED**: Milestone completed and validated on testnet/mainnet as appropriate.
-  - **DONE**: Milestone implemented and verified in development environment.
-  - **PARTIAL**: Milestone partially completed; see description for details.
-  - **NOT IMPLEMENTED**: Milestone not yet started or explicitly skipped.
-  - **ANTICIPATORY**: Work done in anticipation of a future milestone (e.g., post-launch work completed pre-launch).
+### BUILD_021 — Intentional Gap
 
-## Detailed Milestone Descriptions
+BUILD_021 was designated as a "Roadmap Gap Analysis" milestone. It was intentionally left **NOT IMPLEMENTED** to serve as an explicit marker in the roadmap sequence. This gap documents that the project team evaluated the roadmap for missing phases and chose to record the evaluation point without producing a separate deliverable. All subsequent milestones (BUILD_022.1, BUILD_023) were completed normally.
 
-For detailed descriptions of each milestone, including objectives, implementation details, and verification steps, please refer to the individual milestone documentation in the repository (e.g., `## BUILD_001 — Genesis Trace` sections in README.md or specific milestone documents).
+### Utility Roadmap
+
+Planned holder utilities (Signal Points, Trace-linked Mint, Token-gated API) are tracked separately in [UTILITY_ROADMAP.md](UTILITY_ROADMAP.md). All items there are in **PLANNED** status and are not yet implemented.
 
 ---
-*File created to fulfill the reference in README.md Milestones section.*
+*MASTER_ROADMAP.md — Canonical milestone reference for TapeBorn Intelligence.*
