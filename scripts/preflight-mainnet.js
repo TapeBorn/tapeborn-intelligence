@@ -29,6 +29,23 @@ async function runPreflight() {
   console.log('\n🔍 TapeBorn — Mainnet Readiness Preflight');
   console.log('========================================\n');
 
+  // 0. Probe mainnet RPC FIRST (read-only) so later checks can use the result
+  let mainnetReachable = false;
+  let mainnetChainId = null;
+  try {
+    const mainnetRpc = NETWORKS.mainnet.rpcUrl;
+    if (mainnetRpc) {
+      const provider = new ethers.JsonRpcProvider(mainnetRpc);
+      const networkInfo = await provider.getNetwork();
+      const onChainId = Number(networkInfo.chainId);
+      mainnetChainId = onChainId;
+      mainnetReachable = true;
+    }
+  } catch (e) {
+    mainnetReachable = false;
+    mainnetChainId = null;
+  }
+
   // 1. Check network configuration
   check('Network config exists for testnet', () => {
     return !!NETWORKS.testnet && NETWORKS.testnet.chainId === 5042002;
@@ -69,6 +86,8 @@ async function runPreflight() {
       '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c',
       // WETH Withdrawal event signature
       '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65',
+      // Sample genesis transaction hash (used in trace_derivation_prototype.js for testing)
+      '0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587',
     ]);
     let hasKey = false;
     for (const dir of dirs) {
@@ -123,46 +142,22 @@ async function runPreflight() {
     results.checks[results.checks.length - 1].error = e.message;
   }
 
-  // 6. Check mainnet RPC connectivity — HARD BLOCKER
-  // The gate distinguishes: configured ≠ reachable ≠ verified-official
-  // Until official RPC is available, this MUST FAIL.
+  // 6. Check mainnet RPC connectivity — now using pre-probed results
   check('Mainnet RPC configured', () => {
     return !!NETWORKS.mainnet && !!NETWORKS.mainnet.rpcUrl;
   });
   check('Mainnet RPC reachable', () => {
-    const mainnetRpc = NETWORKS.mainnet.rpcUrl;
-    if (!mainnetRpc) return false;
-    // Reachability is checked synchronously in the main try block below;
-    // this check returns the precomputed result.
-    return global.__tapeBornMainnetReachable === true;
+    if (!mainnetReachable) {
+      results.checks[results.checks.length - 1].error = 'RPC not reachable';
+      return false;
+    }
+    // Update description with actual chain ID
+    results.checks[results.checks.length - 1].description = `Mainnet RPC reachable (chainId ${mainnetChainId})`;
+    return true;
   });
   check('Mainnet RPC verified official (chainId 5042)', () => {
-    return global.__tapeBornMainnetChainId === 5042;
+    return mainnetChainId === 5042;
   });
-
-  // Actually probe the mainnet RPC (read-only)
-  try {
-    const mainnetRpc = NETWORKS.mainnet.rpcUrl;
-    if (mainnetRpc) {
-      const provider = new ethers.JsonRpcProvider(mainnetRpc);
-      const networkInfo = await provider.getNetwork();
-      const onChainId = Number(networkInfo.chainId);
-      global.__tapeBornMainnetChainId = onChainId;
-      global.__tapeBornMainnetReachable = true;
-      // Update the reachability check with real chain ID
-      const idx = results.checks.findIndex(c => c.description.startsWith('Mainnet RPC reachable'));
-      if (idx >= 0) {
-        results.checks[idx].description = `Mainnet RPC reachable (chainId ${onChainId})`;
-      }
-    }
-  } catch (e) {
-    global.__tapeBornMainnetReachable = false;
-    global.__tapeBornMainnetChainId = null;
-    const idx = results.checks.findIndex(c => c.description === 'Mainnet RPC reachable');
-    if (idx >= 0) {
-      results.checks[idx].error = e.message.substring(0, 200);
-    }
-  }
 
   // 7. Check that testnet deployment config works
   check('Testnet configuration is functional (dry-run)', () => {
