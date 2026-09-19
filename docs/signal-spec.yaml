@@ -1,0 +1,886 @@
+# TapeBorn Signal Specification v1.0.0
+# Canonical signal definitions — implementation MUST match exactly
+# Generated: 2026-09-19
+# Status: FROZEN — any change requires version bump and audit trail
+
+version: "1.0.0"
+lastUpdated: "2026-09-19"
+auditRef: "TAPEBORN_SYSTEM_AUDIT_001-R2"
+
+# ============================================================
+# GLOBAL SIGNAL METADATA SCHEMA
+# ============================================================
+# Every signal MUST produce these canonical fields in metadata:
+#   - signalId: keccak256(payload) with canonical payload
+#   - signalType: string (from this spec)
+#   - signalVersion: semantic version of this signal definition
+#   - confidence: number [0,1] computed by confidenceRule
+#   - evidence: array of evidence objects (see evidence schema)
+#   - provenance: canonical provenance fields
+#   - data: signal-specific data fields (see signalDataSchema)
+# ============================================================
+
+# ============================================================
+# SIGNAL DEFINITIONS
+# ============================================================
+
+signals:
+
+  # ----------------------------------------------------------
+  # CORE SIGNALS (BUILD_008)
+  # ----------------------------------------------------------
+
+  - id: "large_transfer"
+    type: "large_transfer"
+    version: "1.0.0"
+    description: "USDC transfer exceeding absolute threshold"
+    category: "flow"
+
+    input:
+      source: "decoded_log"
+      eventSignature: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+      requiredFields:
+        - "from"
+        - "to"
+        - "value"
+        - "tokenAddress"
+      filters:
+        - field: "tokenAddress"
+          operator: "in"
+          value: ["0x..."]  # USDC contract addresses per chain
+
+    observationWindow:
+      type: "single_block"
+      blocks: 1
+
+    formula: |
+      valueUsdc = value / 10^18
+      detected = (valueUsdc >= threshold)
+
+    threshold:
+      type: "absolute_usdc"
+      value: 50
+      description: "Fixed absolute threshold; NOT relative to chain average"
+
+    evidence:
+      required:
+        - "evidence.txHash"
+        - "evidence.block"
+        - "data.valueUsdc"
+      optional:
+        - "data.from"
+        - "data.to"
+
+    signalDataSchema:
+      from: "string"
+      to: "string"
+      valueWei: "string"
+      valueUsdc: "number"
+      blockNumber: "number"
+      txHash: "string"
+      tokenAddress: "string"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    confidenceRule: |
+      if valueUsdc >= 1000: 0.9
+      else if valueUsdc >= 500: 0.85
+      else if valueUsdc >= 100: 0.8
+      else: 0.7
+
+    qualityRequirements:
+      - "evidence.txHash"
+      - "evidence.block"
+      - "data.valueUsdc"
+
+    falsePositives:
+      - "Known bridge/DEX router transfers (whitelisted addresses)"
+      - "Protocol treasury operations (whitelisted addresses)"
+
+    falseNegatives:
+      - "Transfers just below threshold"
+      - "Non-USDC token transfers (only USDC monitored)"
+
+    signalIdInputs:
+      - "type"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    testCases:
+      - name: "valid_large_transfer"
+        input:
+          value: "0x56bc75e2d63100000"
+        expected: true
+        expectedConfidence: 0.8
+
+      - name: "valid_very_large_transfer"
+        input:
+          value: "0x3635c9adc5dea00000"
+        expected: true
+        expectedConfidence: 0.9
+
+      - name: "invalid_small_transfer"
+        input:
+          value: "0x1"
+        expected: false
+
+      - name: "invalid_non_usdc"
+        input:
+          value: "0x56bc75e2d63100000"
+          tokenAddress: "0xOtherToken"
+        expected: false
+
+  - id: "contract_creation"
+    type: "contract_creation"
+    version: "1.0.0"
+    description: "New contract deployment detected"
+    category: "structural"
+
+    input:
+      source: "transaction"
+      requiredFields:
+        - "to"
+        - "input"
+      filters:
+        - field: "to"
+          operator: "is_null"
+        - field: "inputLength"
+          operator: "gt"
+          value: 4
+
+    observationWindow:
+      type: "single_block"
+      blocks: 1
+
+    formula: |
+      detected = (tx.to == null AND tx.input.length > 4)
+
+    threshold:
+      type: "input_length"
+      value: 4
+      description: "Contract creation bytecode must exceed 4 bytes"
+
+    evidence:
+      required:
+        - "evidence.txHash"
+        - "evidence.block"
+        - "data.inputLength"
+      optional:
+        - "data.from"
+
+    signalDataSchema:
+      from: "string"
+      blockNumber: "number"
+      txHash: "string"
+      inputLength: "number"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+
+    confidenceRule: |
+      if inputLength > 1000: 0.9
+      else if inputLength > 100: 0.8
+      else: 0.7
+
+    qualityRequirements:
+      - "evidence.txHash"
+      - "evidence.block"
+      - "data.inputLength"
+
+    falsePositives:
+      - "Proxy deployments with minimal bytecode"
+      - "Failed contract deployments (still create contract address)"
+
+    falseNegatives:
+      - "CREATE2 deployments (different tx pattern)"
+      - "Factory-deployed contracts"
+
+    signalIdInputs:
+      - "type"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+
+    testCases:
+      - name: "valid_contract_creation"
+        input:
+          to: null
+          input: "0x6080604052..."
+        expected: true
+
+      - name: "invalid_eoa_transaction"
+        input:
+          to: "0x1234..."
+          input: "0x"
+        expected: false
+
+      - name: "invalid_simple_transfer"
+        input:
+          to: "0x1234..."
+          input: "0xa9059cbb..."
+        expected: false
+
+  - id: "high_frequency_wallet"
+    type: "high_frequency_wallet"
+    version: "1.0.0"
+    description: "Wallet sending many transactions in a single block"
+    category: "behavioral"
+
+    input:
+      source: "block_transactions"
+      requiredFields:
+        - "from"
+        - "blockNumber"
+
+    observationWindow:
+      type: "single_block"
+      blocks: 1
+
+    formula: |
+      count = transactions_from_same_sender_in_block
+      detected = (count >= threshold)
+
+    threshold:
+      type: "count_per_block"
+      value: 5
+      description: "Minimum transactions from same sender in single block"
+
+    evidence:
+      required:
+        - "evidence.block"
+        - "data.txCount"
+      optional:
+        - "data.sender"
+
+    signalDataSchema:
+      address: "string"
+      txCount: "number"
+      blockNumber: "number"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction (optional)"
+
+    confidenceRule: |
+      if txCount >= 20: 0.9
+      else if txCount >= 10: 0.8
+      else: 0.7
+
+    qualityRequirements:
+      - "evidence.block"
+      - "data.txCount"
+      - "data.sender"
+
+    falsePositives:
+      - "Legitimate high-frequency trading bots"
+      - "Batch transaction submitters"
+
+    falseNegatives:
+      - "Transactions spread across multiple blocks"
+
+    signalIdInputs:
+      - "type"
+      - "sender"
+      - "block"
+
+    testCases:
+      - name: "valid_high_frequency"
+        input:
+          transactions:
+            - {from: "0xaaa", to: "0x1"}
+            - {from: "0xaaa", to: "0x2"}
+            - {from: "0xaaa", to: "0x3"}
+            - {from: "0xaaa", to: "0x4"}
+            - {from: "0xaaa", to: "0x5"}
+        expected: true
+        expectedTxCount: 5
+
+      - name: "invalid_low_frequency"
+        input:
+          transactions:
+            - {from: "0xaaa", to: "0x1"}
+            - {from: "0xbbb", to: "0x2"}
+        expected: false
+
+  - id: "contract_interaction"
+    type: "contract_interaction"
+    version: "1.0.0"
+    description: "Wallet interacts with known contract address with non-trivial calldata"
+    category: "interaction"
+
+    input:
+      source: "transaction"
+      requiredFields:
+        - "to"
+        - "input"
+      filters:
+        - field: "to"
+          operator: "in"
+          value: "known_contracts_list"
+        - field: "inputLength"
+          operator: "gt"
+          value: 4
+
+    observationWindow:
+      type: "single_transaction"
+      blocks: 0
+
+    formula: |
+      detected = (tx.to in knownContracts AND tx.input.length > 4)
+
+    threshold:
+      type: "input_length"
+      value: 4
+      description: "Must have calldata beyond function selector"
+
+    evidence:
+      required:
+        - "evidence.txHash"
+        - "evidence.block"
+        - "data.inputLength"
+        - "data.contractAddress"
+      optional:
+        - "data.from"
+        - "data.valueUsdc"
+
+    signalDataSchema:
+      from: "string"
+      to: "string"
+      blockNumber: "number"
+      txHash: "string"
+      inputLength: "number"
+      contractAddress: "string"
+      valueUsdc: "number (optional)"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    confidenceRule: |
+      if inputLength > 100: 0.8
+      else: 0.6
+
+    qualityRequirements:
+      - "evidence.txHash"
+      - "evidence.block"
+      - "data.inputLength"
+      - "data.contractAddress"
+
+    falsePositives:
+      - "Wallet sends to contract but input data is just a transfer"
+      - "Multicall proxy calls"
+
+    falseNegatives:
+      - "Interactions with contracts not in known list"
+      - "Interactions via proxy not in known list"
+
+    signalIdInputs:
+      - "type"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    testCases:
+      - name: "valid_interaction"
+        input:
+          to: "0xcontract"
+          input: "0x123456"
+        expected: true
+
+      - name: "invalid_empty_input"
+        input:
+          to: "0xcontract"
+          input: "0x"
+        expected: false
+
+      - name: "invalid_contract_address"
+        input:
+          to: "0xregular"
+          input: "0x123456"
+        expected: false
+
+  - id: "wallet_burst"
+    type: "wallet_burst"
+    version: "1.0.0"
+    description: "Wallet sends many transactions across a sliding window of blocks"
+    category: "behavioral"
+
+    input:
+      source: "block_transactions"
+      requiredFields:
+        - "from"
+        - "blockNumber"
+
+    observationWindow:
+      type: "sliding_blocks"
+      blocks: 3
+      description: "Count transactions from same sender across 3 consecutive blocks"
+
+    formula: |
+      txCount = sum(transactions_from_sender_in_window)
+      detected = (txCount >= threshold)
+
+    threshold:
+      type: "count_per_window"
+      value: 10
+      description: "Minimum transactions from same sender in 3-block window"
+
+    evidence:
+      required:
+        - "evidence.blockRange"
+        - "data.sender"
+        - "data.txCount"
+      optional:
+        - "data.firstBlock"
+        - "data.lastBlock"
+
+    signalDataSchema:
+      sender: "string"
+      txCount: "number"
+      firstBlock: "number"
+      lastBlock: "number"
+      blockRange:
+        start: "number"
+        end: "number"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "sourceTransaction (optional)"
+
+    confidenceRule: |
+      if txCount > 20: 0.9
+      else: 0.7
+
+    qualityRequirements:
+      - "data.txCount"
+      - "data.sender"
+
+    falsePositives:
+      - "Legitimate high-frequency trading bots"
+      - "MEV searchers"
+      - "Batch submitters"
+
+    falseNegatives:
+      - "Burst spread across >3 blocks"
+
+    signalIdInputs:
+      - "type"
+      - "sender"
+      - "firstBlock"
+
+    testCases:
+      - name: "valid_burst"
+        input:
+          blocks:
+            - number: "0x1"
+              transactions: [{from: "0xaaa"}]
+            - number: "0x2"
+              transactions: [{from: "0xaaa"}, {from: "0xaaa"}]
+            - number: "0x3"
+              transactions: [{from: "0xaaa"}, {from: "0xaaa"}, {from: "0xaaa"}]
+        expected: true
+        expectedTxCount: 6
+
+      - name: "invalid_low_count"
+        input:
+          blocks:
+            - number: "0x1"
+              transactions: [{from: "0xaaa"}]
+            - number: "0x2"
+              transactions: [{from: "0xaaa"}]
+        expected: false
+
+  - id: "token_flow_anomaly"
+    type: "token_flow_anomaly"
+    version: "1.0.0"
+    description: "USDC transfer value significantly exceeds historical/chain average"
+    category: "flow"
+
+    input:
+      source: "decoded_log"
+      eventSignature: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+      requiredFields:
+        - "from"
+        - "to"
+        - "value"
+        - "tokenAddress"
+      filters:
+        - field: "tokenAddress"
+          operator: "in"
+          value: ["USDC_CONTRACT_ADDRESSES"]
+
+    observationWindow:
+      type: "rolling_blocks"
+      blocks: 100
+      description: "Chain average computed over last 100 blocks"
+
+    formula: |
+      valueUsdc = value / 10^18
+      averageVolume = chainAverageUSDC(last_100_blocks)
+      threshold = max(2 * averageVolume, 1000)
+      detected = (valueUsdc >= threshold)
+
+    threshold:
+      type: "dynamic_relative"
+      base: "chain_average_usdc_100_blocks"
+      multiplier: 2.0
+      minimumAbsolute: 1000
+      description: "2x chain average OR 1000 USDC, whichever is higher"
+
+    evidence:
+      required:
+        - "evidence.txHash"
+        - "evidence.block"
+        - "data.from"
+        - "data.to"
+        - "data.valueUsdc"
+      optional:
+        - "data.averageVolume"
+
+    signalDataSchema:
+      from: "string"
+      to: "string"
+      valueUsdc: "number"
+      averageVolume: "number"
+      blockNumber: "number"
+      txHash: "string"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    confidenceRule: |
+      if valueUsdc > 2 * averageVolume: 0.8
+      else if valueUsdc > 1000: 0.6
+      else: 0.5
+
+    qualityRequirements:
+      - "evidence.txHash"
+      - "evidence.block"
+      - "data.valueUsdc"
+      - "data.from"
+
+    falsePositives:
+      - "Whale moving funds to exchange (still valid signal)"
+      - "Protocol treasury rebalancing"
+
+    falseNegatives:
+      - "Anomaly just below 2x threshold"
+      - "Transfers in blocks with insufficient history (<100 blocks)"
+
+    signalIdInputs:
+      - "type"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+      - "to"
+
+    testCases:
+      - name: "valid_anomaly"
+        input:
+          value: "0x56bc75e2d63100000"
+          averageVolume: 500
+        expected: true
+
+      - name: "invalid_normal_flow"
+        input:
+          value: "0x1"
+          averageVolume: 500
+        expected: false
+
+      - name: "valid_above_minimum"
+        input:
+          value: "0xde0b6b3a7640000"
+          averageVolume: 100
+        expected: true
+
+  - id: "address_reactivation"
+    type: "address_reactivation"
+    version: "1.0.0"
+    description: "Address inactive for >100 blocks sends a transaction"
+    category: "behavioral"
+
+    input:
+      source: "transaction"
+      requiredFields:
+        - "from"
+        - "blockNumber"
+
+    observationWindow:
+      type: "historical_blocks"
+      blocks: 100
+      description: "Check sender activity in last 100 blocks"
+
+    formula: |
+      lastSeen = lastKnownBlock(sender)
+      currentBlock = current_block_number
+      interval = currentBlock - lastSeen
+      detected = (lastSeen == 0 OR interval > 100)
+
+    threshold:
+      type: "inactivity_blocks"
+      value: 100
+      description: "Blocks since last activity"
+
+    evidence:
+      required:
+        - "evidence.txHash"
+        - "evidence.block"
+        - "data.from"
+        - "data.lastSeenBlock"
+      optional:
+        - "data.interval"
+
+    signalDataSchema:
+      from: "string"
+      blockNumber: "number"
+      txHash: "string"
+      lastSeenBlock: "number"
+      interval: "number"
+
+    provenanceFields:
+      - "chain"
+      - "chainId"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+
+    confidenceRule: |
+      if interval > 500: 0.9
+      else: 0.7
+
+    qualityRequirements:
+      - "evidence.txHash"
+      - "evidence.block"
+      - "data.from"
+      - "data.lastSeenBlock"
+
+    falsePositives:
+      - "New address first appears (reactivation from genesis)"
+      - "Contract deployer addresses (first tx is deploy)"
+
+    falseNegatives:
+      - "Address active just within 100-block window"
+      - "Historical state not available (persistence issue)"
+
+    signalIdInputs:
+      - "type"
+      - "block"
+      - "sourceTransaction"
+      - "from"
+
+    testCases:
+      - name: "valid_reactivation"
+        input:
+          block:
+            transactions: [{from: "0xaaa", hash: "0x1"}]
+          lastSeenBlock: 0
+          currentBlock: 101
+        expected: true
+        expectedInterval: 101
+
+      - name: "invalid_active_address"
+        input:
+          block:
+            transactions: [{from: "0xaaa", hash: "0x1"}]
+          lastSeenBlock: 50
+          currentBlock: 60
+        expected: false
+
+  - id: "unusual_inflow"
+    type: "unusual_inflow"
+    version: "0.0.0"
+    status: "DEPRECATED"
+    description: "Merged into token_flow_anomaly v1.0.0"
+    migration: "Use token_flow_anomaly instead"
+
+# ============================================================
+# CANONICAL SIGNAL ID GENERATION
+# ============================================================
+
+signalIdGeneration:
+  algorithm: "keccak256"
+  payloadFormat: "concatenation with '|' separator"
+  payloadFields:
+    - "chainId"
+    - "signalType"
+    - "signalVersion"
+    - "blockNumber"
+    - "blockHash"
+    - "transactionHash"
+    - "logIndex"
+    - "relevantAddresses"
+    - "relevantValues"
+  outputFormat: "sig_<hex>"
+
+# ============================================================
+# EVIDENCE SCHEMA
+# ============================================================
+
+evidenceSchema:
+  - type: "transaction"
+    fields:
+      txHash: "string"
+      description: "Source transaction hash"
+  - type: "block"
+    fields:
+      block: "number"
+      description: "Block number where signal detected"
+  - type: "inputLength"
+    fields:
+      value: "number"
+      description: "Transaction input length in bytes"
+  - type: "valueUsdc"
+    fields:
+      value: "number"
+      description: "USDC value transferred"
+  - type: "txCount"
+    fields:
+      value: "number"
+      description: "Number of transactions from same sender"
+  - type: "inputLength"
+    fields:
+      value: "number"
+      description: "Transaction input length in bytes"
+  - type: "txCount"
+    fields:
+      value: "number"
+      description: "Transaction count in window"
+  - type: "blockRange"
+    fields:
+      start: "number"
+      end: "number"
+      description: "Block range for windowed detection"
+  - type: "averageVolume"
+    fields:
+      value: "number"
+      description: "Historical average volume for comparison"
+  - type: "lastSeenBlock"
+    fields:
+      value: "number"
+      description: "Last block where address was active"
+  - type: "interval"
+    fields:
+      value: "number"
+      description: "Blocks since last activity"
+
+# ============================================================
+# PROVENANCE SCHEMA
+# ============================================================
+
+provenanceSchema:
+  required:
+    - "chain"
+    - "chainId"
+    - "block"
+  optional:
+    - "sourceTransaction"
+    - "timestamp"
+    - "from"
+    - "to"
+    - "contractAddress"
+    - "logIndex"
+
+# ============================================================
+# CHAIN CONFIGURATION
+# ============================================================
+
+chains:
+  - name: "Arc Testnet"
+    chainId: 5042002
+    rpc: "https://rpc.testnet.arc.io"
+    usdcContract: "0x..."
+    knownContracts:
+      - "0x..."
+      - "0x..."
+      - "0x..."
+
+  - name: "Arc Mainnet"
+    chainId: 5042
+    rpc: "https://rpc.mainnet.arc.io"
+    usdcContract: "0x..."
+    knownContracts:
+      - "0x..."
+      - "0x..."
+      - "0x..."
+
+# ============================================================
+# VERSIONING POLICY
+# ============================================================
+
+versioning:
+  major: "Breaking change to formula, threshold type, or evidence schema"
+  minor: "New signal added, or threshold value adjusted within same type"
+  patch: "Documentation fix, test case addition, false positive clarification"
+
+# Current version: 1.0.0
+# Next planned: 1.1.0 (when token_flow_anomaly gets full historical average implementation)
+
+# ============================================================
+# VALIDATION RULES (for CI enforcement)
+# ============================================================
+
+validationRules:
+  - rule: "every_signal_has_version"
+    description: "Every signal definition must have explicit version field"
+  - rule: "confidence_rule_deterministic"
+    description: "confidenceRule must be pure function of inputs (no randomness/time)"
+  - rule: "threshold_explicit"
+    description: "Every signal must have explicit threshold configuration"
+  - rule: "evidence_required_explicit"
+    description: "Required evidence fields must be explicitly listed"
+  - rule: "test_cases_present"
+    description: "Each signal must have >=3 test cases (valid, invalid, edge)"
+  - rule: "signal_id_inputs_explicit"
+    description: "signalIdInputs must explicitly list all payload components"
+  - rule: "version_format_semver"
+    description: "Signal version must follow semantic versioning"
+
+# ============================================================
+# IMPLEMENTATION VALIDATION CHECKLIST
+# ============================================================
+
+implementationChecklist:
+  - All signals compile with solc 0.8.24
+  - All test cases pass
+  - Confidence rules match implementation exactly
+  - Thresholds match specification exactly
+  - Evidence fields match schema exactly
+  - Signal ID generation uses canonical keccak256
+  - Version fields match spec version
+  - Deprecated signals marked and not executed
+  - Chain configs match Arc testnet/mainnet
+  - Evidence schema validated in tests
+  - Provenance schema validated in tests
+  - Signal ID generation deterministic (same input = same ID)
+  - No timestamp/randomness in confidence calculation
+  - All false positive conditions documented
+  - All false negative conditions documented
+
+# ============================================================
+# END OF SPECIFICATION
+# ============================================================
