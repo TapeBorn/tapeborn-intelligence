@@ -1,0 +1,180 @@
+name: TapeBorn CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20.18.0'
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint (syntax check)
+        run: npm run compile 2>&1 | head -20
+
+      - name: Run engine tests
+        run: npm run test
+
+      - name: Run Hardhat tests
+        run: npm run test:hardhat
+
+      - name: Run preflight checks
+        run: npm run preflight
+        env:
+          ARC_RPC_URL_TESTNET: ${{ secrets.ARC_RPC_URL_TESTNET }}
+          ARC_RPC_URL_MAINNET: ${{ secrets.ARC_RPC_URL_MAINNET }}
+
+  deploy-testnet:
+    name: Deploy to Arc Testnet
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: testnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Deploy to Arc Testnet
+        run: npx hardhat run scripts/deploy-mainnet.js --network arcTestnet
+        env:
+          DEV_WALLET_PRIVATE_KEY: ${{ secrets.DEV_WALLET_PRIVATE_KEY }}
+          ARC_RPC_URL_TESTNET: ${{ secrets.ARC_RPC_URL_TESTNET }}
+
+      - name: Verify on Arc Testnet Explorer
+        run: npx hardhat verify --network arcTestnet ${{ env.CONTRACT_ADDRESS }} "SignalArtifact" "SIG" "https://api.tapeborn.io/metadata/" 1000000000000000 10000
+        env:
+          ARC_RPC_URL_TESTNET: ${{ secrets.ARC_RPC_URL_TESTNET }}
+          ARC_EXPLORER_API_KEY: ${{ secrets.ARC_EXPLORER_API_KEY }}
+        continue-on-error: true
+
+      - name: Save deployment info
+        run: |
+          echo "CONTRACT_ADDRESS=${{ env.CONTRACT_ADDRESS }}" >> $GITHUB_ENV
+          echo "DEPLOYMENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
+  deploy-mainnet:
+    name: Deploy to Arc Mainnet
+    needs: deploy-testnet
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: mainnet
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Deploy to Arc Mainnet (dry-run first)
+        run: node scripts/deploy-mainnet.js --dry-run
+        env:
+          DEV_WALLET_PRIVATE_KEY: ${{ secrets.DEV_WALLET_PRIVATE_KEY }}
+          ARC_RPC_URL_MAINNET: ${{ secrets.ARC_RPC_URL_MAINNET }}
+
+      - name: Deploy to Arc Mainnet
+        if: github.event.inputs.confirm == 'true' || false
+        run: node scripts/deploy-mainnet.js
+        env:
+          DEV_WALLET_PRIVATE_KEY: ${{ secrets.DEV_WALLET_PRIVATE_KEY }}
+          ARC_RPC_URL_MAINNET: ${{ secrets.ARC_RPC_URL_MAINNET }}
+
+      - name: Verify on Arc Mainnet Explorer
+        if: github.event.inputs.confirm == 'true' || false
+        run: npx hardhat verify --network arcMainnet ${{ env.CONTRACT_ADDRESS }} "SignalArtifact" "SIG" "https://api.tapeborn.io/metadata/" 1000000000000000 10000
+        env:
+          ARC_RPC_URL_MAINNET: ${{ secrets.ARC_RPC_URL_MAINNET }}
+          ARC_EXPLORER_API_KEY: ${{ secrets.ARC_EXPLORER_API_KEY }}
+        continue-on-error: true
+
+      - name: Create deployment summary
+        run: |
+          cat << 'EOF' > deployment-summary.md
+          # SignalArtifact Deployment Summary
+          
+          **Network:** Arc Mainnet (Chain ID: 5042)
+          **Contract:** ${{ env.CONTRACT_ADDRESS }}
+          **Deployer:** ${{ env.DEPLOYER_ADDRESS }}
+          **Timestamp:** ${{ env.DEPLOYMENT_TIME }}
+          **Transaction:** ${{ env.DEPLOYMENT_TX }}
+          
+          ## Parameters
+          - **Name:** SignalArtifact
+          - **Symbol:** SIG
+          - **Base URI:** https://api.tapeborn.io/metadata/
+          - **Mint Fee:** 0.001 ETH
+          - **Max Supply:** 10,000
+          
+          ## Links
+          - [Explorer](https://explorer.mainnet.arc.io/address/${{ env.CONTRACT_ADDRESS }})
+          - [Transaction](https://explorer.mainnet.arc.io/tx/${{ env.DEPLOYMENT_TX }})
+          
+          ## Verification
+          - Status: ${{ env.VERIFIED || 'Pending' }}
+          - Verified At: ${{ env.VERIFIED_AT || 'N/A' }}
+          EOF
+          cat deployment-summary.md
+
+  notify:
+    name: Notify
+    needs: [lint-and-test, deploy-testnet, deploy-mainnet]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          STATUS="${{ needs.deploy-mainnet.result }}"
+          if [ "$STATUS" = "success" ]; then
+            echo "✅ Deployment successful!"
+          elif [ "$STATUS" = "skipped" ]; then
+            echo "⏭️  Mainnet deployment skipped (manual confirmation required)"
+          else
+            echo "❌ Deployment failed!"
+          fi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
