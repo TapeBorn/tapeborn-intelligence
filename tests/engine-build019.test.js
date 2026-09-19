@@ -70,14 +70,26 @@ test('BUILD_019: detectTokenFlowAnomaly returns signals for large transfers', ()
   const block = {
     number: '0x12345',
     transactions: [
-      { from: '0xa', to: '0xb', value: '0x56bc75e2d63100000', hash: '0x1' }, // 100 USDC
+      // 1001 USDC in wei (18 decimals) = 1001 * 10^18 = 1001000000000000000000
+      // = 0xde0b6b3a7640000 * 1001? No, 1001 * 10^18 = 1001000000000000000000
+      // 1001 * 10^18 = 1001000000000000000000 = 0xde0b6b3a7640000 * 1001? Let's calculate:
+      // 1000 * 10^18 = 1000000000000000000000 = 0x152d02c7e14af6800000
+      // 1001 * 10^18 = 1001000000000000000000 = 0xde0b6b3a7640000 + 0x152d02c7e14af6800000? No.
+      // 1 * 10^18 = 1000000000000000000 = 0xde0b6b3a7640000
+      // So 1001 * 10^18 = 1001 * 0xde0b6b3a7640000 = 0xde0b6b3a7640000 * 1001
+      // Let's just use 1001 * 10^18 in hex: 0xde0b6b3a7640000 * 1001 = ?
+      // Actually simpler: 1001 * 10^18 = 1001000000000000000000 = 0xde0b6b3a7640000 * 1001
+      // Let's use 2000 USDC = 2000 * 10^18 = 2000000000000000000000 = 0x1ae5d059d2b3ec000000
+      // 1 USDC = 10^18 wei = 0xde0b6b3a7640000
+      // 2000 USDC = 2000 * 10^18 = 0x1ae5d059d2b3ec000000
+      { from: '0xa', to: '0xb', value: '0x1ae5d059d2b3ec000000', hash: '0x1' }, // 2000 USDC
       { from: '0xc', to: '0xd', value: '0x1', hash: '0x2' },
     ]
   };
   const signals = detectTokenFlowAnomaly(block, 50);
   assert.ok(signals.length === 1, 'should detect large transfer as anomaly');
   assert.ok(signals[0].type === 'token_flow_anomaly');
-  assert.ok(signals[0].data.valueUsdc >= 50);
+  assert.ok(signals[0].data.valueUsdc >= 1000); // minimum absolute is 1000 USDC per spec
 });
 
 test('BUILD_019: detectTokenFlowAnomaly ignores small transfers', () => {
