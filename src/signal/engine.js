@@ -7,6 +7,7 @@ const { getBlockByNumber, getBlockNumber, hexToInt } = require("../orchestrator/
 const logger = require("../orchestrator/logger");
 const { validateBlock } = require("../orchestrator/validator");
 const { generateSignalId } = require("../metadata/schema");
+const { getSignalState } = require("./state");
 
 // Configuration per signal-spec.yaml v1.0.0
 const CONFIG = {
@@ -58,9 +59,45 @@ function getKnownContracts(chainId) {
   return [];
 }
 
-// In-memory state for address_reactivation (TEMPORARY - R4 will replace with persistent storage)
-// TODO(R4): Replace with persistent SQLite storage
-const lastSeenMap = {};
+// Lazy getter for signalState - creates new instance if env var changed or first access
+let _signalStateCache = null;
+let _signalStateCacheEnv = null;
+
+function getSignalStateInstance() {
+  // Force re-read of env var each time to support test isolation
+  const dbPath = process.env.SIGNAL_STATE_DB || null;
+
+  // Check if we need to create a new instance
+  if (!_signalStateCache || _signalStateCacheEnv !== process.env.SIGNAL_STATE_DB) {
+    // Close old instance if it exists
+    if (global._signalStateInstance) {
+      try {
+        global._signalStateInstance.close();
+      } catch (e) {
+        // ignore close errors
+      }
+    }
+    global._signalStateInstance = require("./state").getSignalState(process.env.SIGNAL_STATE_DB || null);
+    _signalStateCacheEnv = process.env.SIGNAL_STATE_DB;
+  }
+  return global._signalStateInstance;
+}
+
+// Export signalState getter for backward compatibility
+const signalState = {
+  getLastSeen: (address) => getSignalStateInstance().getLastSeen(address),
+  setLastSeen: (address, blockNumber, timestamp) => getSignalStateInstance().setLastSeen(address, blockNumber, timestamp),
+  setLastSeenBatch: (updates) => getSignalStateInstance().setLastSeenBatch(updates),
+  getChainAverageVolume: (chainId) => getSignalStateInstance().getChainAverageVolume(chainId),
+  setChainAverageVolume: (chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock) =>
+    getSignalStateInstance().setChainAverageVolume(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock),
+  getState: (key) => getSignalStateInstance().getState(key),
+  setState: (key, value) => getSignalStateInstance().setState(key, value),
+  deleteState: (key) => getSignalStateInstance().deleteState(key),
+  pruneOldAddressRecords: (olderThanTimestamp) => getSignalStateInstance().pruneOldAddressRecords(olderThanTimestamp),
+  close: () => getSignalStateInstance().close(),
+  isClosed: () => getSignalStateInstance().isClosed ? getSignalStateInstance().isClosed() : false
+};
 
 /**
  * Compute signal quality/completeness based on type and available data/evidence.
@@ -338,7 +375,7 @@ function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbs
 /**
  * Detect address reactivation: address inactive for >100 blocks sends a transaction.
  * Per spec: lastSeen == 0 OR interval > 100 blocks
- * Uses in-memory map (TEMPORARY - R4 will replace with persistent SQLite storage)
+ * Uses persistent SQLite storage (R4)
  */
 function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressReactivationThreshold) {
   const signals = [];
@@ -346,7 +383,9 @@ function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressRe
   const currentBlock = hexToInt(block.number);
   for (const tx of txs) {
     const from = tx.from;
-    const lastSeen = lastSeenMap[from] || 0;
+    const normalizedAddress = from.toLowerCase();
+    const lastSeenData = getSignalStateInstance().getLastSeen(normalizedAddress);
+    const lastSeen = lastSeenData.lastSeenBlock;
     const interval = currentBlock - lastSeen;
     if (lastSeen === 0 || interval > inactivityThreshold) {
       signals.push(createSignal(
@@ -366,7 +405,7 @@ function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressRe
       ));
     }
     // Update last seen
-    lastSeenMap[from] = currentBlock;
+    getSignalStateInstance().setLastSeen(from, currentBlock);
   }
   return signals;
 }
@@ -421,5 +460,5 @@ module.exports = {
   SIGNAL_TYPES,
   CONFIG,
   getKnownContracts,
-  lastSeenMap, // exported for testing (TEMPORARY)
+  signalState, // R4: persistent signal state
 };
