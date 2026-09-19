@@ -1,0 +1,309 @@
+=== npm run test ===
+
+> tapeborn-intelligence@0.1.0 test
+> node --test tests/engine*.test.js tests/adversarial-engine.test.js
+
+TAP version 13
+# [2026-09-19T12:00:52.332Z] [INFO] [ARC] Network mode: testnet (Arc Testnet)
+# Subtest: detectAddressReactivation: empty transactions array
+ok 1 - detectAddressReactivation: empty transactions array
+  ---
+  duration_ms: 1.142673
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: transaction with no from address
+ok 2 - detectAddressReactivation: transaction with no from address
+  ---
+  duration_ms: 0.160347
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: very large block numbers
+ok 3 - detectAddressReactivation: very large block numbers
+  ---
+  duration_ms: 11.349726
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: multiple transactions from same address - only first triggers
+ok 4 - detectAddressReactivation: multiple transactions from same address - only first triggers
+  ---
+  duration_ms: 24.314094
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: track lastSeen correctly across blocks
+ok 5 - detectAddressReactivation: track lastSeen correctly across blocks
+  ---
+  duration_ms: 15.888988
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: detect reactivation after threshold
+ok 6 - detectAddressReactivation: detect reactivation after threshold
+  ---
+  duration_ms: 18.6382
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: many different addresses
+ok 7 - detectAddressReactivation: many different addresses
+  ---
+  duration_ms: 701.284323
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: checksummed addresses
+ok 8 - detectAddressReactivation: checksummed addresses
+  ---
+  duration_ms: 7.428321
+  type: 'test'
+  ...
+# Subtest: detectAddressReactivation: zero address
+ok 9 - detectAddressReactivation: zero address
+  ---
+  duration_ms: 7.436521
+  type: 'test'
+  ...
+# Subtest: generateSignalId: deterministic for same input
+ok 10 - generateSignalId: deterministic for same input
+  ---
+  duration_ms: 0.565907
+  type: 'test'
+  ...
+# Subtest: generateSignalId: different IDs for different tx hashes
+ok 11 - generateSignalId: different IDs for different tx hashes
+  ---
+  duration_ms: 0.334412
+  type: 'test'
+  ...
+# Subtest: generateSignalId: different addresses in data but same provenance.from gives same ID
+ok 12 - generateSignalId: different addresses in data but same provenance.from gives same ID
+  ---
+  duration_ms: 0.177956
+  type: 'test'
+  ...
+# Subtest: generateSignalId: different IDs for different addresses in provenance
+ok 13 - generateSignalId: different IDs for different addresses in provenance
+  ---
+  duration_ms: 0.250013
+  type: 'test'
+  ...
+# Subtest: generateSignalId: same ID regardless of object key order
+ok 14 - generateSignalId: same ID regardless of object key order
+  ---
+  duration_ms: 0.272933
+  type: 'test'
+  ...
+# Subtest: generateSignalId: handle missing optional fields gracefully
+ok 15 - generateSignalId: handle missing optional fields gracefully
+  ---
+  duration_ms: 0.251975
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: empty transactions
+ok 16 - detectLargeTransfers: empty transactions
+  ---
+  duration_ms: 0.257854
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: transactions with no value
+ok 17 - detectLargeTransfers: transactions with no value
+  ---
+  duration_ms: 0.147687
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: zero value
+ok 18 - detectLargeTransfers: zero value
+  ---
+  duration_ms: 0.146947
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: detect transfers above threshold
+ok 19 - detectLargeTransfers: detect transfers above threshold
+  ---
+  duration_ms: 0.323343
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: NOT detect transfers below threshold
+ok 20 - detectLargeTransfers: NOT detect transfers below threshold
+  ---
+  duration_ms: 0.138197
+  type: 'test'
+  ...
+# Subtest: detectLargeTransfers: very large values
+ok 21 - detectLargeTransfers: very large values
+  ---
+  duration_ms: 0.234434
+  type: 'test'
+  ...
+# Subtest: detectContractCreations: detect contract creation
+ok 22 - detectContractCreations: detect contract creation
+  ---
+  duration_ms: 0.309632
+  type: 'test'
+  ...
+# Subtest: detectContractCreations: NOT detect when to is not null
+ok 23 - detectContractCreations: NOT detect when to is not null
+  ---
+  duration_ms: 0.145637
+  type: 'test'
+  ...
+# Subtest: detectContractCreations: NOT detect when input is empty
+ok 24 - detectContractCreations: NOT detect when input is empty
+  ---
+  duration_ms: 0.125527
+  type: 'test'
+  ...
+# Subtest: detectContractCreations: input "0x00" is 2 bytes (threshold=1, so detects)
+ok 25 - detectContractCreations: input "0x00" is 2 bytes (threshold=1, so detects)
+  ---
+  duration_ms: 0.220355
+  type: 'test'
+  ...
+# Subtest: detectContractCreations: detect when input > 4 bytes
+ok 26 - detectContractCreations: detect when input > 4 bytes
+  ---
+  duration_ms: 0.206385
+  type: 'test'
+  ...
+# Subtest: detectTokenFlowAnomaly: empty transactions
+ok 27 - detectTokenFlowAnomaly: empty transactions
+  ---
+  duration_ms: 0.193534
+  type: 'test'
+  ...
+# Subtest: detectTokenFlowAnomaly: uses minimum absolute threshold (1000 USDC)
+ok 28 - detectTokenFlowAnomaly: uses minimum absolute threshold (1000 USDC)
+  ---
+  duration_ms: 0.190405
+  type: 'test'
+  ...
+# Subtest: detectTokenFlowAnomaly: detect above minimum absolute
+ok 29 - detectTokenFlowAnomaly: detect above minimum absolute
+  ---
+  duration_ms: 0.173236
+  type: 'test'
+  ...
+# [2026-09-19T12:00:53.339Z] [INFO] [ARC] Network mode: testnet (Arc Testnet)
+# Subtest: BUILD_019: detectContractInteractions returns signals for contract calls with data
+ok 30 - BUILD_019: detectContractInteractions returns signals for contract calls with data
+  ---
+  duration_ms: 2.354273
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectContractInteractions ignores empty input
+ok 31 - BUILD_019: detectContractInteractions ignores empty input
+  ---
+  duration_ms: 0.166635
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectWalletBurst returns signals for frequent sender
+ok 32 - BUILD_019: detectWalletBurst returns signals for frequent sender
+  ---
+  duration_ms: 0.641384
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectWalletBurst ignores low-frequency senders
+ok 33 - BUILD_019: detectWalletBurst ignores low-frequency senders
+  ---
+  duration_ms: 0.147677
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectTokenFlowAnomaly returns signals for large transfers
+ok 34 - BUILD_019: detectTokenFlowAnomaly returns signals for large transfers
+  ---
+  duration_ms: 0.686503
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectTokenFlowAnomaly ignores small transfers
+ok 35 - BUILD_019: detectTokenFlowAnomaly ignores small transfers
+  ---
+  duration_ms: 0.123568
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectAddressReactivation detects reactivated address
+ok 36 - BUILD_019: detectAddressReactivation detects reactivated address
+  ---
+  duration_ms: 19.141918
+  type: 'test'
+  ...
+# Subtest: BUILD_019: detectAddressReactivation ignores active addresses
+ok 37 - BUILD_019: detectAddressReactivation ignores active addresses
+  ---
+  duration_ms: 18.389876
+  type: 'test'
+  ...
+# [2026-09-19T12:00:53.565Z] [INFO] [ARC] Network mode: testnet (Arc Testnet)
+# Subtest: SignalState: persists address last seen across instances
+ok 38 - SignalState: persists address last seen across instances
+  ---
+  duration_ms: 20.997424
+  type: 'test'
+  ...
+# Subtest: SignalState: batch updates work correctly
+ok 39 - SignalState: batch updates work correctly
+  ---
+  duration_ms: 14.224977
+  type: 'test'
+  ...
+# Subtest: SignalState: chain average volume operations
+ok 40 - SignalState: chain average volume operations
+  ---
+  duration_ms: 13.118074
+  type: 'test'
+  ...
+# Subtest: address_reactivation: uses persistent state correctly within single process
+ok 41 - address_reactivation: uses persistent state correctly within single process
+  ---
+  duration_ms: 23.556462
+  type: 'test'
+  ...
+# [2026-09-19T12:00:53.796Z] [INFO] [ARC] Network mode: testnet (Arc Testnet)
+# Subtest: Engine: detectLargeTransfers returns signals for large values
+ok 42 - Engine: detectLargeTransfers returns signals for large values
+  ---
+  duration_ms: 2.328483
+  type: 'test'
+  ...
+# Subtest: Engine: detectContractCreations returns signals for to=null
+ok 43 - Engine: detectContractCreations returns signals for to=null
+  ---
+  duration_ms: 0.646685
+  type: 'test'
+  ...
+# Subtest: Engine: detectHighFrequencyWallets returns signals for frequent wallets
+ok 44 - Engine: detectHighFrequencyWallets returns signals for frequent wallets
+  ---
+  duration_ms: 0.715524
+  type: 'test'
+  ...
+# Subtest: Engine: detectHighFrequencyWallets quality with missing evidence
+ok 45 - Engine: detectHighFrequencyWallets quality with missing evidence
+  ---
+  duration_ms: 0.563906
+  type: 'test'
+  ...
+# [2026-09-19T12:00:54.090Z] [INFO] [Engine] Scanning 6 blocks: 62910866-62910871
+# [2026-09-19T12:00:55.232Z] [INFO] [Engine] Found 114 signals
+# [2026-09-19T12:00:55.233Z] [WARN] [Engine] Invalid block range {"fromBlock":1000,"toBlock":999}
+# Subtest: Engine: scanBlocks returns signals for a range
+ok 46 - Engine: scanBlocks returns signals for a range
+  ---
+  duration_ms: 1327.046188
+  type: 'test'
+  ...
+# Subtest: Engine: scanBlocks handles invalid range gracefully
+ok 47 - Engine: scanBlocks handles invalid range gracefully
+  ---
+  duration_ms: 0.549536
+  type: 'test'
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2982.410327
+=== npx hardhat test ===
+
+
+  0 passing (0ms)
+

@@ -1,0 +1,1512 @@
+=== src/signal/engine.js ===
+485 src/signal/engine.js
+09dfcd612b6314f1a12b72709266a9e6  src/signal/engine.js
+--- content ---
+// src/signal/engine.js
+// Signal Engine v0 — deterministic, evidence-backed signal detection.
+// Enhanced with validation and logging (BUILD_013).
+// Signal definitions per signal-spec.yaml v1.0.0 (R2 frozen).
+
+const { getBlockByNumber, getBlockNumber, hexToInt } = require("../orchestrator/arc");
+const logger = require("../orchestrator/logger");
+const { validateBlock } = require("../orchestrator/validator");
+const { generateSignalId } = require("../metadata/schema");
+const { getSignalState } = require("./state");
+
+// Configuration per signal-spec.yaml v1.0.0
+const CONFIG = {
+  largeTransferThreshold: 50, // USDC (absolute threshold per spec)
+  contractCreationThreshold: 1,
+  highFrequencyThreshold: 5, // per block
+  contractInteractionInputLengthThreshold: 4, // bytes
+  walletBurstThreshold: 10, // per 3-block window
+  walletBurstWindowBlocks: 3, // sliding window
+  tokenFlowAnomalyMinAbsolute: 1000, // USDC minimum
+  tokenFlowAnomalyMultiplier: 2.0, // 2x chain average
+  tokenFlowAnomalyWindowBlocks: 100, // rolling window for chain average
+  addressReactivationThreshold: 100, // blocks of inactivity
+  maxBlocks: 10,
+};
+
+// Signal types per signal-spec.yaml v1.0.0
+const SIGNAL_TYPES = {
+  LARGE_TRANSFER: "large_transfer",
+  CONTRACT_CREATION: "contract_creation",
+  HIGH_FREQUENCY_WALLET: "high_frequency_wallet",
+  CONTRACT_INTERACTION: "contract_interaction",
+  WALLET_BURST: "wallet_burst",
+  TOKEN_FLOW_ANOMALY: "token_flow_anomaly",
+  ADDRESS_REACTIVATION: "address_reactivation",
+};
+
+// Signal versions per signal-spec.yaml v1.0.0
+const SIGNAL_VERSIONS = {
+  large_transfer: "1.0.0",
+  contract_creation: "1.0.0",
+  high_frequency_wallet: "1.0.0",
+  contract_interaction: "1.0.0",
+  wallet_burst: "1.0.0",
+  token_flow_anomaly: "1.0.0",
+  address_reactivation: "1.0.0",
+};
+
+// Known contract addresses per chain (for contract_interaction detector)
+// Configure via ARC_KNOWN_CONTRACTS env var (comma-separated) or leave empty for open detection
+// Format: "0x1234...,0x5678..."
+function getKnownContracts(chainId) {
+  const envContracts = process.env.ARC_KNOWN_CONTRACTS;
+  if (envContracts) {
+    return envContracts.split(",").map(s => s.trim()).filter(Boolean);
+  }
+  // Default empty - open detection mode (any contract with data > 4 bytes)
+  // Production should set ARC_KNOWN_CONTRACTS explicitly
+  return [];
+}
+
+// Lazy getter for signalState - creates new instance if env var changed or first access
+let _signalStateCache = null;
+let _signalStateCacheEnv = null;
+
+function getSignalStateInstance() {
+  // Force re-read of env var each time to support test isolation
+  const dbPath = process.env.SIGNAL_STATE_DB || null;
+
+  // Check if we need to create a new instance
+  if (!_signalStateCache || _signalStateCacheEnv !== process.env.SIGNAL_STATE_DB) {
+    // Close old instance if it exists
+    if (global._signalStateInstance) {
+      try {
+        global._signalStateInstance.close();
+      } catch (e) {
+        // ignore close errors
+      }
+    }
+    global._signalStateInstance = require("./state").getSignalState(process.env.SIGNAL_STATE_DB || null);
+    _signalStateCacheEnv = process.env.SIGNAL_STATE_DB;
+  }
+  return global._signalStateInstance;
+}
+
+// Reset function to clear global cache (for tests)
+function resetSignalStateGlobal() {
+  if (global._signalStateInstance) {
+    try {
+      // Clear the address_last_seen table before closing
+      global._signalStateInstance.db.prepare('DELETE FROM address_last_seen').run();
+    } catch (e) {
+      // ignore errors
+    }
+    try {
+      global._signalStateInstance.close();
+    } catch (e) {
+      // ignore close errors
+    }
+    global._signalStateInstance = null;
+  }
+  _signalStateCache = null;
+  _signalStateCacheEnv = null;
+}
+
+// Export signalState getter for backward compatibility
+const signalState = {
+  getLastSeen: (address) => getSignalStateInstance().getLastSeen(address),
+  setLastSeen: (address, blockNumber, timestamp) => getSignalStateInstance().setLastSeen(address, blockNumber, timestamp),
+  setLastSeenBatch: (updates) => getSignalStateInstance().setLastSeenBatch(updates),
+  getChainAverageVolume: (chainId) => getSignalStateInstance().getChainAverageVolume(chainId),
+  setChainAverageVolume: (chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock) =>
+    getSignalStateInstance().setChainAverageVolume(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock),
+  getState: (key) => getSignalStateInstance().getState(key),
+  setState: (key, value) => getSignalStateInstance().setState(key, value),
+  deleteState: (key) => getSignalStateInstance().deleteState(key),
+  pruneOldAddressRecords: (olderThanTimestamp) => getSignalStateInstance().pruneOldAddressRecords(olderThanTimestamp),
+  close: () => getSignalStateInstance().close(),
+  isClosed: () => getSignalStateInstance().isClosed ? getSignalStateInstance().isClosed() : false,
+  reset: resetSignalStateGlobal
+};
+
+/**
+ * Compute signal quality/completeness based on type and available data/evidence.
+ * Returns an object with 'status' ('complete' or 'partial') and 'missing' array.
+ * Quality rules per signal-spec.yaml v1.0.0
+ */
+function computeSignalQuality(type, data, evidence) {
+  const missing = [];
+  const required = {
+    large_transfer: ['evidence.txHash', 'evidence.block', 'data.valueUsdc'],
+    contract_creation: ['evidence.txHash', 'evidence.block', 'data.inputLength'],
+    high_frequency_wallet: ['evidence.block', 'data.txCount'],
+    contract_interaction: ['evidence.txHash', 'evidence.block', 'data.inputLength', 'data.contractAddress'],
+    wallet_burst: ['data.txCount', 'data.sender'],
+    token_flow_anomaly: ['evidence.txHash', 'evidence.block', 'data.valueUsdc', 'data.from'],
+    address_reactivation: ['evidence.txHash', 'evidence.block', 'data.from', 'data.lastSeenBlock'],
+  };
+  const fields = required[type] || [];
+  for (const field of fields) {
+    const parts = field.split('.');
+    let val;
+    if (parts[0] === 'evidence') val = evidence?.[parts[1]];
+    else if (parts[0] === 'data') val = data?.[parts[1]];
+    if (val === undefined || val === null) missing.push(field);
+  }
+  return {
+    status: missing.length === 0 ? 'complete' : 'partial',
+    missing,
+  };
+}
+
+/**
+ * Generate a signal object with canonical Signal ID per signal-spec.yaml v1.0.0
+ * Signal ID uses keccak256 canonical payload per signal-spec.yaml
+ * Signal version per signal-spec.yaml v1.0.0
+ */
+function createSignal(type, data, evidence) {
+  const quality = computeSignalQuality(type, data, evidence);
+  // Build provenance-like object for deterministic ID generation
+  const provenance = {
+    block: data?.blockNumber || data?.block || '0',
+    sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+    from: data?.from || evidence?.from || '0x',
+    to: data?.to || '',
+    contractAddress: data?.contractAddress || '',
+    blockHash: data?.blockHash || '0x',
+    logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+  };
+  // Use deterministic Signal ID from metadata/schema (keccak256 canonical payload)
+  const signalId = generateSignalId({ type, data, evidence, version: SIGNAL_VERSIONS[type] || "1.0.0" }, provenance);
+  return {
+    id: signalId,
+    type,
+    timestamp: new Date().toISOString(),
+    data,
+    evidence,
+    confidence: 0.8, // default, will be overridden by confidenceRule per signal type
+    version: SIGNAL_VERSIONS[type] || "1.0.0", // per signal-spec.yaml v1.0.0
+    quality, // added in BUILD_018
+  };
+}
+
+/**
+ * Detect large transfers (USDC value > threshold)
+ * Per spec: absolute threshold 50 USDC (NOT relative to chain average)
+ */
+function detectLargeTransfers(block, threshold = CONFIG.largeTransferThreshold) {
+  const signals = [];
+  const txs = block.transactions || [];
+  for (const tx of txs) {
+    const value = BigInt(tx.value || "0x0");
+    const valueUsdc = Number(value) / 1e18;
+    if (valueUsdc >= threshold) {
+      signals.push(createSignal(
+        SIGNAL_TYPES.LARGE_TRANSFER,
+        {
+          from: tx.from,
+          to: tx.to,
+          valueWei: value.toString(),
+          valueUsdc,
+          blockNumber: hexToInt(block.number),
+          txHash: tx.hash,
+          tokenAddress: "0x...", // USDC contract - should be per chain config
+        },
+        {
+          block: block.number,
+          txHash: tx.hash,
+          description: `Transfer of ${valueUsdc.toFixed(2)} USDC from ${tx.from.slice(0, 10)}... to ${tx.to?.slice(0, 10)}...`
+        }
+      ));
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect contract creations (to === null)
+ * Per spec: to === null AND input.length > 4 bytes
+ */
+function detectContractCreations(block) {
+  const signals = [];
+  const txs = block.transactions || [];
+  for (const tx of txs) {
+    if (tx.to === null) {
+      const inputLength = (tx.input || "0x").length - 2;
+      if (inputLength > CONFIG.contractCreationThreshold) {
+        signals.push(createSignal(
+          SIGNAL_TYPES.CONTRACT_CREATION,
+          {
+            from: tx.from,
+            blockNumber: hexToInt(block.number),
+            txHash: tx.hash,
+            inputLength,
+          },
+          {
+            block: block.number,
+            txHash: tx.hash,
+            description: `Contract created by ${tx.from.slice(0, 10)}... (input length ${inputLength})`
+          }
+        ));
+      }
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect high-frequency wallets (many tx in a single block)
+ * Per spec: threshold 5 tx per block
+ */
+function detectHighFrequencyWallets(block, threshold = CONFIG.highFrequencyThreshold) {
+  const signals = [];
+  const txs = block.transactions || [];
+  const countMap = {};
+  for (const tx of txs) {
+    const from = tx.from;
+    countMap[from] = (countMap[from] || 0) + 1;
+  }
+  for (const [addr, count] of Object.entries(countMap)) {
+    if (count >= threshold) {
+      signals.push(createSignal(
+        SIGNAL_TYPES.HIGH_FREQUENCY_WALLET,
+        {
+          address: addr,
+          txCount: count,
+          blockNumber: hexToInt(block.number),
+        },
+        {
+          block: block.number,
+          description: `Wallet ${addr.slice(0, 10)}... sent ${count} transactions in block ${block.number}`
+        }
+      ));
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect contract interactions (to is a known contract and input data > 4 bytes)
+ * Per spec: tx.to in knownContracts AND input.length > 4 bytes
+ * If no known contracts configured, treats any non-null to with data > 4 bytes as interaction
+ */
+function detectContractInteractions(block, knownContracts = []) {
+  const signals = [];
+  const txs = block.transactions || [];
+  // Get chain-specific known contracts from environment
+  const chainId = parseInt(process.env.ARC_CHAIN_ID) || 5042002;
+  const chainKnownContracts = getKnownContracts(parseInt(process.env.ARC_CHAIN_ID) || 5042002);
+  const allKnownContracts = [...new Set([...knownContracts, ...chainKnownContracts])];
+
+  for (const tx of txs) {
+    const input = tx.input || "0x";
+    const inputLength = input.length - 2;
+    if (tx.to !== null && inputLength > CONFIG.contractInteractionInputLengthThreshold) {
+      // Check if knownContracts list is provided, otherwise treat any non-null to with data as interaction
+      const isKnown = allKnownContracts.length === 0 || allKnownContracts.includes(tx.to);
+      if (isKnown) {
+        signals.push(createSignal(
+          SIGNAL_TYPES.CONTRACT_INTERACTION,
+          {
+            from: tx.from,
+            to: tx.to,
+            blockNumber: hexToInt(block.number),
+            txHash: tx.hash,
+            inputLength,
+            contractAddress: tx.to,
+            valueUsdc: Number(BigInt(tx.value || "0x0")) / 1e18,
+          },
+          {
+            block: block.number,
+            txHash: tx.hash,
+            description: `Contract interaction: ${tx.from.slice(0, 10)}... → ${tx.to.slice(0, 10)}... (input ${inputLength} bytes)`
+          }
+        ));
+      }
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect wallet burst: a wallet sends many transactions in a short time.
+ * Per spec: sliding window of 3 blocks, threshold 10 transactions.
+ * TODO: Full sliding window implementation requires state across blocks.
+ * Current implementation: per-block count with note about window limitation.
+ */
+function detectWalletBurst(block, threshold = CONFIG.walletBurstThreshold) {
+  const signals = [];
+  const txs = block.transactions || [];
+  const countMap = {};
+  for (const tx of txs) {
+    const from = tx.from;
+    countMap[from] = (countMap[from] || 0) + 1;
+  }
+  for (const [addr, count] of Object.entries(countMap)) {
+    if (count >= threshold) {
+      signals.push(createSignal(
+        SIGNAL_TYPES.WALLET_BURST,
+        {
+          sender: addr,
+          txCount: count,
+          blockNumber: hexToInt(block.number),
+          firstBlock: block.number,
+          lastBlock: block.number,
+          // Note: Full sliding window (3 blocks) requires state across blocks
+          // This is a simplified per-block implementation
+        },
+        {
+          block: block.number,
+          description: `Wallet ${addr.slice(0, 10)}... sent ${count} transactions in block ${block.number}`
+        }
+      ));
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect token flow anomaly: USDC transfer value significantly exceeds historical average.
+ * Per spec: valueUsdc >= max(2 * chainAverageUSDC(last_100_blocks), 1000 USDC)
+ * TODO: Implement rolling 100-block average calculation (requires state across blocks)
+ * Current: Uses fixed threshold as fallback; chain average calculation requires persistent state.
+ */
+function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbsolute) {
+  const signals = [];
+  const txs = block.transactions || [];
+  for (const tx of txs) {
+    const value = BigInt(tx.value || "0x0");
+    const valueUsdc = Number(value) / 1e18;
+    // Per spec: threshold = max(2 * chainAverageUSDC(last_100_blocks), 1000 USDC)
+    // For now using minimum absolute threshold; chain average requires persistent state
+    const effectiveThreshold = Math.max(threshold, CONFIG.tokenFlowAnomalyMinAbsolute);
+    if (valueUsdc >= effectiveThreshold) {
+      signals.push(createSignal(
+        SIGNAL_TYPES.TOKEN_FLOW_ANOMALY,
+        {
+          from: tx.from,
+          to: tx.to,
+          valueUsdc,
+          averageVolume: threshold, // placeholder - should be chain average
+          blockNumber: hexToInt(block.number),
+          txHash: tx.hash,
+        },
+        {
+          block: block.number,
+          txHash: tx.hash,
+          description: `Anomalous USDC flow: ${valueUsdc.toFixed(2)} USDC from ${tx.from.slice(0, 10)}... to ${tx.to?.slice(0, 10)}...`
+        }
+      ));
+    }
+  }
+  return signals;
+}
+
+/**
+ * Detect address reactivation: address inactive for >100 blocks sends a transaction.
+ * Per spec: lastSeen == 0 OR interval > 100 blocks
+ * Uses persistent SQLite storage (R4)
+ */
+function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressReactivationThreshold) {
+  const signals = [];
+  const txs = block.transactions || [];
+  const currentBlock = hexToInt(block.number || "0x0");
+  for (const tx of txs) {
+    const from = tx.from;
+    if (!from) continue; // Skip transactions without from address
+    const normalizedAddress = from.toLowerCase();
+    const lastSeenData = getSignalStateInstance().getLastSeen(normalizedAddress);
+    const lastSeen = lastSeenData.lastSeenBlock;
+    const interval = currentBlock - lastSeen;
+    if (lastSeen === 0 || interval > inactivityThreshold) {
+      signals.push(createSignal(
+        SIGNAL_TYPES.ADDRESS_REACTIVATION,
+        {
+          from,
+          blockNumber: currentBlock,
+          txHash: tx.hash,
+          lastSeenBlock: lastSeen,
+          interval,
+        },
+        {
+          block: block.number,
+          txHash: tx.hash,
+          description: `Address ${from.slice(0, 10)}... reactivated after ${interval} blocks`
+        }
+      ));
+    }
+    // Update last seen
+    getSignalStateInstance().setLastSeen(from, currentBlock);
+  }
+  return signals;
+}
+
+/**
+ * Main engine: scan blocks and collect signals
+ */
+async function scanBlocks(fromBlock, toBlock) {
+  if (fromBlock > toBlock) {
+    logger.warn('[Engine] Invalid block range', { fromBlock, toBlock });
+    return [];
+  }
+  const count = toBlock - fromBlock + 1;
+  logger.info(`[Engine] Scanning ${count} blocks: ${fromBlock}-${toBlock}`);
+  const signals = [];
+  for (let i = fromBlock; i <= toBlock; i++) {
+    try {
+      const block = await getBlockByNumber("0x" + i.toString(16), true);
+      if (!block) {
+        logger.warn(`[Engine] Block ${i} not found, skipping`);
+        continue;
+      }
+      if (!validateBlock(block, `block:${i}`)) {
+        logger.warn(`[Engine] Block ${i} invalid, skipping`);
+        continue;
+      }
+      signals.push(...detectLargeTransfers(block));
+      signals.push(...detectContractCreations(block));
+      signals.push(...detectHighFrequencyWallets(block));
+      signals.push(...detectContractInteractions(block));
+      signals.push(...detectWalletBurst(block));
+      signals.push(...detectTokenFlowAnomaly(block));
+      signals.push(...detectAddressReactivation(block));
+    } catch (e) {
+      logger.error(`[Engine] Error scanning block ${i}`, { error: e.message });
+    }
+  }
+  logger.info(`[Engine] Found ${signals.length} signals`);
+  return signals;
+}
+
+module.exports = {
+  scanBlocks,
+  detectLargeTransfers,
+  detectContractCreations,
+  detectHighFrequencyWallets,
+  detectContractInteractions,
+  detectWalletBurst,
+  detectTokenFlowAnomaly,
+  detectAddressReactivation,
+  createSignal,
+  SIGNAL_TYPES,
+  CONFIG,
+  getKnownContracts,
+  signalState, // R4: persistent signal state
+};
+=== src/signal/state.js ===
+191 src/signal/state.js
+4bc72da925b5d52d3aa270b26d8e9939  src/signal/state.js
+--- content ---
+// src/signal/state.js
+// Persistent signal state using SQLite (R4)
+// Replaces in-memory lastSeenMap with persistent SQLite storage
+
+const Database = require('better-sqlite3');
+const path = require('path');
+const fs = require('fs');
+const pathModule = require('path');
+
+class SignalState {
+  constructor(dbPath = null) {
+    // Default to .data/signal-state.sqlite in project root
+    if (!dbPath) {
+      const projectRoot = pathModule.resolve(__dirname, '..', '..');
+      const dataDir = pathModule.join(projectRoot, '.data');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      dbPath = pathModule.join(dataDir, 'signal-state.sqlite');
+    }
+    
+    this.db = new Database(dbPath);
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('foreign_keys = ON');
+    
+    this.initSchema();
+  }
+
+  initSchema() {
+    // Create tables
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS address_last_seen (
+        address TEXT PRIMARY KEY,
+        last_seen_block INTEGER NOT NULL,
+        last_seen_timestamp INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_address_last_seen_block 
+      ON address_last_seen(last_seen_block);
+      
+      CREATE TABLE IF NOT EXISTS signal_state (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      
+      CREATE TABLE IF NOT EXISTS chain_average_volume (
+        chain_id INTEGER PRIMARY KEY,
+        average_volume_usdc REAL NOT NULL,
+        window_blocks INTEGER NOT NULL,
+        last_updated_block INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+  }
+
+  // Address last seen operations
+  getLastSeen(address) {
+    const row = this.db.prepare(
+      'SELECT last_seen_block, last_seen_timestamp FROM address_last_seen WHERE address = ?'
+    ).get(address.toLowerCase());
+    
+    if (!row) return { lastSeenBlock: 0, lastSeenTimestamp: 0 };
+    return {
+      lastSeenBlock: row.last_seen_block,
+      lastSeenTimestamp: row.last_seen_timestamp
+    };
+  }
+
+  setLastSeen(address, blockNumber, timestamp = Date.now()) {
+    const normalizedAddress = address.toLowerCase();
+    this.db.prepare(`
+      INSERT INTO address_last_seen (address, last_seen_block, last_seen_timestamp, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(address) DO UPDATE SET
+        last_seen_block = excluded.last_seen_block,
+        last_seen_timestamp = excluded.last_seen_timestamp,
+        updated_at = excluded.updated_at
+    `).run(normalizedAddress, blockNumber, timestamp, timestamp);
+  }
+
+  // Batch update for multiple addresses
+  setLastSeenBatch(updates) {
+    const stmt = this.db.prepare(`
+      INSERT INTO address_last_seen (address, last_seen_block, last_seen_timestamp, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(address) DO UPDATE SET
+        last_seen_block = excluded.last_seen_block,
+        last_seen_timestamp = excluded.last_seen_timestamp,
+        updated_at = excluded.updated_at
+    `);
+    
+    const tx = this.db.transaction((updates) => {
+      for (const { address, blockNumber, timestamp } of updates) {
+        stmt.run(address.toLowerCase(), blockNumber, timestamp || Date.now(), timestamp || Date.now());
+      }
+    });
+    tx(updates);
+  }
+
+  // Chain average volume operations
+  getChainAverageVolume(chainId) {
+    const row = this.db.prepare(
+      'SELECT average_volume_usdc, window_blocks, last_updated_block FROM chain_average_volume WHERE chain_id = ?'
+    ).get(chainId);
+    
+    if (!row) return { averageVolumeUsdc: 0, windowBlocks: 0, lastUpdatedBlock: 0 };
+    return {
+      averageVolumeUsdc: row.average_volume_usdc,
+      windowBlocks: row.window_blocks,
+      lastUpdatedBlock: row.last_updated_block
+    };
+  }
+
+  setChainAverageVolume(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock) {
+    this.db.prepare(`
+      INSERT INTO chain_average_volume (chain_id, average_volume_usdc, window_blocks, last_updated_block, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(chain_id) DO UPDATE SET
+        average_volume_usdc = excluded.average_volume_usdc,
+        window_blocks = excluded.window_blocks,
+        last_updated_block = excluded.last_updated_block,
+        updated_at = excluded.updated_at
+    `).run(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock, Date.now());
+  }
+
+  // Generic key-value storage for other signal state
+  getState(key) {
+    const row = this.db.prepare('SELECT value FROM signal_state WHERE key = ?').get(key);
+    if (!row) return null;
+    try {
+      return JSON.parse(row.value);
+    } catch {
+      return row.value;
+    }
+  }
+
+  setState(key, value) {
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    this.db.prepare(`
+      INSERT INTO signal_state (key, value, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = excluded.updated_at
+    `).run(key, serialized, Date.now());
+  }
+
+  deleteState(key) {
+    this.db.prepare('DELETE FROM signal_state WHERE key = ?').run(key);
+  }
+
+  // Cleanup old records (optional maintenance)
+  pruneOldAddressRecords(olderThanTimestamp) {
+    return this.db.prepare(
+      'DELETE FROM address_last_seen WHERE last_seen_timestamp < ?'
+    ).run(olderThanTimestamp);
+  }
+
+  close() {
+    this.db.close();
+  }
+}
+
+// Singleton instance
+let instance = null;
+
+function getSignalState(dbPath) {
+  if (!instance || instance.isClosed()) {
+    instance = new SignalState(dbPath);
+  }
+  return instance;
+}
+
+function resetSignalState() {
+  if (instance) {
+    instance.close();
+    instance = null;
+  }
+}
+
+// Add isClosed method to SignalState class
+SignalState.prototype.isClosed = function() {
+  return this.db === null || this.db.open === false;
+};
+
+module.exports = {
+  SignalState,
+  getSignalState,
+  resetSignalState
+};
+=== src/signal/decoder.js ===
+128 src/signal/decoder.js
+c1ed93076da101b1fcf3409f6a849ddb  src/signal/decoder.js
+--- content ---
+// src/signal/decoder.js
+// Event log decoder — ERC-20 Transfer, Approval, and other common events.
+// Supports Arc testnet (Ethereum-compatible logs).
+
+const { hexToInt } = require("../orchestrator/arc");
+
+// ERC-20 event signatures (keccak256 of the event signature)
+const SIGNATURES = {
+  TRANSFER: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+  APPROVAL: "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+  DEPOSIT: "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c", // WETH deposit
+  WITHDRAWAL: "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65", // WETH withdrawal
+};
+
+function padHex(s) {
+  if (!s) return "0x0000000000000000000000000000000000000000000000000000000000000000";
+  if (s.startsWith("0x")) s = s.slice(2);
+  return "0x" + s.padStart(64, "0");
+}
+
+function decodeAddress(data, offset = 0) {
+  // data is a hex string like "0x0000...0000abcdef..."
+  const hex = data.startsWith("0x") ? data.slice(2) : data;
+  const start = offset * 64;
+  const slice = hex.slice(start, start + 64);
+  // Last 40 chars = address
+  const addr = "0x" + slice.slice(-40);
+  return addr;
+}
+
+function decodeUint(data, offset = 0) {
+  const hex = data.startsWith("0x") ? data.slice(2) : data;
+  const start = offset * 64;
+  const slice = hex.slice(start, start + 64);
+  return BigInt("0x" + slice);
+}
+
+function decodeTransfer(log) {
+  // ERC-20 Transfer: indexed topics [0]=sig, [1]=from, [2]=to; data = value
+  const topics = log.topics || [];
+  if (topics.length < 3) return null;
+  if (topics[0] !== SIGNATURES.TRANSFER) return null;
+
+  const from = "0x" + topics[1].slice(-40);
+  const to = "0x" + topics[2].slice(-40);
+  let value = 0n;
+  if (log.data && log.data !== "0x") {
+    try { value = BigInt(log.data); } catch (_) { value = 0n; }
+  }
+
+  return {
+    event: "Transfer",
+    from,
+    to,
+    valueWei: "0x" + value.toString(16),
+    valueDec: value.toString(),
+    valueHuman: Number(value) / 1e18, // assuming 18 decimals; adjust per token
+  };
+}
+
+function decodeApproval(log) {
+  const topics = log.topics || [];
+  if (topics.length < 3) return null;
+  if (topics[0] !== SIGNATURES.APPROVAL) return null;
+
+  const owner = "0x" + topics[1].slice(-40);
+  const spender = "0x" + topics[2].slice(-40);
+  let value = 0n;
+  if (log.data && log.data !== "0x") {
+    try { value = BigInt(log.data); } catch (_) { value = 0n; }
+  }
+
+  return {
+    event: "Approval",
+    owner,
+    spender,
+    valueWei: "0x" + value.toString(16),
+    valueDec: value.toString(),
+    valueHuman: Number(value) / 1e18,
+  };
+}
+
+function decodeDeposit(log) {
+  const topics = log.topics || [];
+  if (topics[0] !== SIGNATURES.DEPOSIT) return null;
+  const dst = "0x" + topics[1].slice(-40);
+  const wad = BigInt(log.data || "0x0");
+  return {
+    event: "Deposit",
+    dst,
+    wadWei: "0x" + wad.toString(16),
+    wadDec: wad.toString(),
+    wadHuman: Number(wad) / 1e18,
+  };
+}
+
+function decodeWithdrawal(log) {
+  const topics = log.topics || [];
+  if (topics[0] !== SIGNATURES.WITHDRAWAL) return null;
+  const src = "0x" + topics[1].slice(-40);
+  const wad = BigInt(log.data || "0x0");
+  return {
+    event: "Withdrawal",
+    src,
+    wadWei: "0x" + wad.toString(16),
+    wadDec: wad.toString(),
+    wadHuman: Number(wad) / 1e18,
+  };
+}
+
+function decodeLog(log) {
+  if (!log || !log.topics || log.topics.length === 0) return null;
+  const sig = log.topics[0];
+  if (sig === SIGNATURES.TRANSFER) return decodeTransfer(log);
+  if (sig === SIGNATURES.APPROVAL) return decodeApproval(log);
+  if (sig === SIGNATURES.DEPOSIT) return decodeDeposit(log);
+  if (sig === SIGNATURES.WITHDRAWAL) return decodeWithdrawal(log);
+  return null;
+}
+
+module.exports = {
+  decodeLog,
+  decodeTransfer,
+  decodeApproval,
+  decodeDeposit,
+  decodeWithdrawal,
+  SIGNATURES,
+  hexToInt,
+};
+=== src/orchestrator/validator.js ===
+76 src/orchestrator/validator.js
+17d46d2a4fe89fc93443214b1472ef43  src/orchestrator/validator.js
+--- content ---
+// src/orchestrator/validator.js
+// Input validation for RPC and blockchain data
+
+const logger = require('./logger');
+
+function isValidBlockNumber(blockNumber) {
+  if (typeof blockNumber === 'number' && Number.isInteger(blockNumber) && blockNumber >= 0) {
+    return true;
+  }
+  if (typeof blockNumber === 'string' && /^0x[0-9a-fA-F]+$/.test(blockNumber)) {
+    return true;
+  }
+  if (blockNumber === 'latest' || blockNumber === 'earliest' || blockNumber === 'pending') {
+    return true;
+  }
+  return false;
+}
+
+function validateBlockNumber(blockNumber, context = 'block') {
+  if (!isValidBlockNumber(blockNumber)) {
+    logger.warn(`[Validator] Invalid block number: ${blockNumber}`, { context });
+    return false;
+  }
+  return true;
+}
+
+function isValidBlock(block) {
+  if (!block) return false;
+  if (typeof block !== 'object') return false;
+  if (!block.number && block.number !== 0) return false;
+  if (!block.hash || typeof block.hash !== 'string') return false;
+  if (!block.transactions || !Array.isArray(block.transactions)) return false;
+  return true;
+}
+
+function validateBlock(block, context = 'block') {
+  if (!isValidBlock(block)) {
+    logger.warn(`[Validator] Invalid block data`, { context });
+    return false;
+  }
+  return true;
+}
+
+function isValidTransaction(tx) {
+  if (!tx) return false;
+  if (typeof tx !== 'object') return false;
+  if (!tx.hash || typeof tx.hash !== 'string') return false;
+  if (tx.from === undefined || tx.from === null) return false;
+  return true;
+}
+
+function validateTransaction(tx, context = 'tx') {
+  if (!isValidTransaction(tx)) {
+    logger.warn(`[Validator] Invalid transaction`, { context });
+    return false;
+  }
+  return true;
+}
+
+function isValidHexString(str) {
+  return typeof str === 'string' && /^0x[0-9a-fA-F]*$/.test(str);
+}
+
+function isValidAddress(str) {
+  return isValidHexString(str) && str.length === 42;
+}
+
+module.exports = {
+  isValidBlockNumber,
+  validateBlockNumber,
+  isValidBlock,
+  validateBlock,
+  isValidTransaction,
+  validateTransaction,
+  isValidHexString,
+  isValidAddress,
+};
+=== src/orchestrator/arc.js ===
+129 src/orchestrator/arc.js
+e3db8892ce893b43cafc59e4ff36e8d6  src/orchestrator/arc.js
+--- content ---
+// src/orchestrator/arc.js
+// Arc RPC client (used by BUILD_002 -> BUILD_007). Standard Ethereum JSON-RPC over HTTP.
+// Enhanced with retry, rate limiting, validation, and logging (BUILD_013).
+// Network-aware: uses testnet by default, mainnet only with explicit config (BUILD_014).
+
+const logger = require('./logger');
+const { retry } = require('./retry');
+const { RateLimiter } = require('./rateLimit');
+const { validateBlockNumber, validateBlock, isValidBlockNumber } = require('./validator');
+const { getRpcUrl, getCurrentNetwork, isMainnet, DEFAULT_NETWORK } = require('./networks');
+
+// Use RPC from network config, but allow override via env
+const DEFAULT_RPC = process.env.ARC_RPC_URL || getRpcUrl();
+
+// Log network mode on startup
+logger.info(`[ARC] Network mode: ${DEFAULT_NETWORK} (${getCurrentNetwork().name})`);
+if (isMainnet()) {
+  logger.warn('[ARC] ⚠️ MAINNET MODE ACTIVE — use with extreme caution');
+}
+
+// Global rate limiter instance (10 requests per second)
+const rateLimiter = new RateLimiter({ requestsPerSecond: 10 });
+
+class RpcError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+}
+
+function shouldRetryRpc(error) {
+  // Retry on network errors, timeouts, and certain HTTP statuses
+  if (error.code === -32000 && error.message.includes('timeout')) return true;
+  if (error.code === -32000 && error.message.includes('ETIMEDOUT')) return true;
+  if (error.code === 429) return true; // Rate limited
+  if (error.code >= 500 && error.code < 600) return true; // Server errors
+  if (error.code === -32000) return true; // Generic RPC error (could be temporary)
+  return false;
+}
+
+async function rpc(method, params = [], { rpcUrl = DEFAULT_RPC, timeoutMs = 10000, maxRetries = 3 } = {}) {
+  logger.debug(`[RPC] Calling ${method}`, { params: params.length, rpcUrl });
+
+  const callFn = async () => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new RpcError(res.status, `HTTP ${res.status}`);
+      const j = await res.json();
+      if (j.error) throw new RpcError(j.error.code || -32000, j.error.message || "rpc error");
+      return j.result;
+    } catch (e) {
+      if (e.name === "AbortError") throw new RpcError(-32000, `timeout after ${timeoutMs}ms`);
+      throw e;
+    } finally {
+      clearTimeout(t);
+    }
+  };
+
+  try {
+    const result = await rateLimiter.call(() =>
+      retry(callFn, {
+        maxRetries: maxRetries,
+        baseDelayMs: 1000,
+        maxDelayMs: 10000,
+        shouldRetry: shouldRetryRpc,
+        context: `rpc:${method}`,
+      })
+    );
+    logger.debug(`[RPC] ${method} succeeded`);
+    return result;
+  } catch (e) {
+    logger.error(`[RPC] ${method} failed after retries`, { error: e.message, code: e.code });
+    throw e;
+  }
+}
+
+const hexToInt = (h) => (typeof h === "string" ? parseInt(h, 16) : Number(h));
+const hexToBig = (h) => BigInt(h);
+
+async function getChainId() {
+  const result = await rpc("eth_chainId");
+  return hexToInt(result);
+}
+
+async function getBlockNumber() {
+  const result = await rpc("eth_blockNumber");
+  const block = hexToInt(result);
+  logger.debug(`[RPC] Latest block: ${block}`);
+  return block;
+}
+
+async function getBlockByNumber(tag = "latest", includeTx = false) {
+  // Validate tag if it's a number
+  if (typeof tag === 'number') {
+    tag = '0x' + tag.toString(16);
+  }
+  if (!isValidBlockNumber(tag)) {
+    logger.warn(`[RPC] Invalid block tag: ${tag}`);
+    throw new RpcError(-32000, `Invalid block tag: ${tag}`);
+  }
+  const block = await rpc("eth_getBlockByNumber", [tag, includeTx]);
+  if (!block) {
+    logger.warn(`[RPC] Block not found: ${tag}`);
+    return null;
+  }
+  // Validate block structure
+  if (!validateBlock(block, `block:${tag}`)) {
+    logger.warn(`[RPC] Block validation failed for ${tag}`);
+  }
+  return block;
+}
+
+module.exports = {
+  rpc,
+  getChainId,
+  getBlockNumber,
+  getBlockByNumber,
+  hexToInt,
+  hexToBig,
+  DEFAULT_RPC,
+  RpcError,
+};
+
+=== src/orchestrator/rateLimit.js ===
+31 src/orchestrator/rateLimit.js
+572a1bd5a5841171294da5694171cb65  src/orchestrator/rateLimit.js
+--- content ---
+// src/orchestrator/rateLimit.js
+// Simple rate limiter for RPC calls
+
+const logger = require('./logger');
+
+class RateLimiter {
+  constructor(options = {}) {
+    this.requestsPerSecond = options.requestsPerSecond || 10;
+    this.minIntervalMs = 1000 / this.requestsPerSecond;
+    this.lastCallTime = 0;
+    this.queue = [];
+    this.pending = false;
+  }
+
+  async acquire() {
+    const now = Date.now();
+    const waitTime = Math.max(0, this.lastCallTime + this.minIntervalMs - now);
+    if (waitTime > 0) {
+      logger.debug(`[RateLimiter] Waiting ${waitTime}ms`);
+      await new Promise(r => setTimeout(r, waitTime));
+    }
+    this.lastCallTime = Date.now();
+    return;
+  }
+
+  async call(fn) {
+    await this.acquire();
+    return await fn();
+  }
+}
+
+module.exports = { RateLimiter };
+=== src/orchestrator/networks.js ===
+58 src/orchestrator/networks.js
+f24f210593bd38e78f84cbe803310d68  src/orchestrator/networks.js
+--- content ---
+// src/orchestrator/networks.js
+// Network definitions for Arc (testnet and mainnet)
+// BUILD_014: Arc Mainnet Readiness
+
+const NETWORKS = {
+  testnet: {
+    name: 'Arc Testnet',
+    chainId: 5042002,
+    rpcUrl: 'https://rpc.testnet.arc.io',
+    isMainnet: false,
+    symbol: 'USDC',
+    description: 'Arc Testnet — Circle L1 test network',
+  },
+  mainnet: {
+    name: 'Arc Mainnet',
+    chainId: 5042, // Official Arc Mainnet chain ID (0x13b2)
+    rpcUrl: 'https://rpc.mainnet.arc.io', // Placeholder — official RPC not yet available (mainnet target Sep 16)
+    isMainnet: true,
+    symbol: 'USDC',
+    description: 'Arc Mainnet — Circle L1 production network',
+  },
+};
+
+// Default to testnet for safety
+const DEFAULT_NETWORK = process.env.ARC_NETWORK || 'testnet';
+
+function getNetwork(name = DEFAULT_NETWORK) {
+  const network = NETWORKS[name];
+  if (!network) {
+    throw new Error(`Unknown network: ${name}. Available: ${Object.keys(NETWORKS).join(', ')}`);
+  }
+  return network;
+}
+
+function getCurrentNetwork() {
+  return getNetwork(DEFAULT_NETWORK);
+}
+
+function isMainnet() {
+  return getCurrentNetwork().isMainnet;
+}
+
+function getRpcUrl() {
+  return getCurrentNetwork().rpcUrl;
+}
+
+function getChainId() {
+  return getCurrentNetwork().chainId;
+}
+
+module.exports = {
+  NETWORKS,
+  getNetwork,
+  getCurrentNetwork,
+  isMainnet,
+  getRpcUrl,
+  getChainId,
+  DEFAULT_NETWORK,
+};
+=== src/orchestrator/logger.js ===
+59 src/orchestrator/logger.js
+3e1b07bf7bfd8217cd431444ec69bae4  src/orchestrator/logger.js
+--- content ---
+// src/orchestrator/logger.js
+// Structured logging with levels
+
+const LOG_LEVELS = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  NONE: 4,
+};
+
+const DEFAULT_LEVEL = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
+
+let currentLevel = LOG_LEVELS[DEFAULT_LEVEL] ?? LOG_LEVELS.INFO;
+
+function setLevel(level) {
+  const upper = level.toUpperCase();
+  if (upper in LOG_LEVELS) {
+    currentLevel = LOG_LEVELS[upper];
+  }
+}
+
+function formatMessage(level, message, meta = {}) {
+  const timestamp = new Date().toISOString();
+  const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta) : '';
+  return `[${timestamp}] [${level}] ${message}${metaStr}`;
+}
+
+function debug(message, meta) {
+  if (currentLevel <= LOG_LEVELS.DEBUG) {
+    console.debug(formatMessage('DEBUG', message, meta));
+  }
+}
+
+function info(message, meta) {
+  if (currentLevel <= LOG_LEVELS.INFO) {
+    console.info(formatMessage('INFO', message, meta));
+  }
+}
+
+function warn(message, meta) {
+  if (currentLevel <= LOG_LEVELS.WARN) {
+    console.warn(formatMessage('WARN', message, meta));
+  }
+}
+
+function error(message, meta) {
+  if (currentLevel <= LOG_LEVELS.ERROR) {
+    console.error(formatMessage('ERROR', message, meta));
+  }
+}
+
+module.exports = {
+  setLevel,
+  debug,
+  info,
+  warn,
+  error,
+  LOG_LEVELS,
+};
+=== src/orchestrator/retry.js ===
+46 src/orchestrator/retry.js
+d9956d148ae89ed170deb4d3ee81b766  src/orchestrator/retry.js
+--- content ---
+// src/orchestrator/retry.js
+// Retry logic with exponential backoff
+
+const logger = require('./logger');
+
+/**
+ * Retry an async function with exponential backoff
+ * @param {Function} fn - async function to retry
+ * @param {Object} options
+ * @param {number} options.maxRetries - max retries (default: 3)
+ * @param {number} options.baseDelayMs - base delay in ms (default: 1000)
+ * @param {number} options.maxDelayMs - max delay in ms (default: 10000)
+ * @param {Function} options.shouldRetry - function that takes error and returns boolean (default: always true)
+ * @param {string} options.context - context label for logging
+ */
+async function retry(fn, options = {}) {
+  const {
+    maxRetries = 3,
+    baseDelayMs = 1000,
+    maxDelayMs = 10000,
+    shouldRetry = () => true,
+    context = 'retry',
+  } = options;
+
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+        logger.debug(`[${context}] Retry attempt ${attempt} after ${delay}ms`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const shouldRetryResult = shouldRetry(err);
+      logger.debug(`[${context}] Attempt ${attempt} failed: ${err.message}, shouldRetry=${shouldRetryResult}`);
+      if (attempt >= maxRetries || !shouldRetryResult) {
+        throw err;
+      }
+    }
+  }
+  throw lastError;
+}
+
+module.exports = { retry };
+=== src/metadata/schema.js ===
+249 src/metadata/schema.js
+3ca702c7df6d562785eb63204967a757  src/metadata/schema.js
+--- content ---
+// src/metadata/schema.js
+// BUILD_011 — Metadata System
+// Standardized provenance, Signal ID, and evidence for Signal Artifacts.
+// Version: v1.0.0
+
+const { getCurrentNetwork } = require("../orchestrator/networks");
+const { keccak256, toUtf8Bytes } = require("ethers");
+
+/**
+ * Generate a deterministic Signal ID from signal data and provenance.
+ * Uses canonical keccak256(payload) as per signal-spec.yaml v1.0.0.
+ * Payload: chainId|signalType|signalVersion|blockNumber|blockHash|transactionHash|logIndex|relevantAddresses|relevantValues
+ * Output format: sig_<hex>
+ */
+function generateSignalId(signal, provenance) {
+  // Canonical payload fields per signal-spec.yaml v1.0.0
+  const network = getCurrentNetwork();
+  
+  // Build canonical payload components
+  const components = [
+    String(network.chainId),                                    // chainId
+    String(signal.type || "unknown"),                           // signalType
+    String(signal.version || "1.0.0"),                          // signalVersion
+    String(provenance.block || signal.data?.blockNumber || "0"), // blockNumber
+    String(provenance.blockHash || "0x"),                       // blockHash
+    String(provenance.sourceTransaction || signal.data?.txHash || signal.evidence?.txHash || "0x"), // transactionHash
+    String(provenance.logIndex || signal.data?.logIndex || "0"), // logIndex
+    // relevantAddresses: from, to, contractAddress (comma-separated)
+    [
+      provenance.from || signal.data?.from || signal.evidence?.from || "",
+      provenance.to || signal.data?.to || "",
+      provenance.contractAddress || signal.data?.contractAddress || ""
+    ].filter(Boolean).join(",") || "",                          // relevantAddresses
+    // relevantValues: valueUsdc, inputLength, txCount, etc. (comma-separated)
+    [
+      signal.data?.valueUsdc !== undefined ? String(signal.data.valueUsdc) : "",
+      signal.data?.inputLength !== undefined ? String(signal.data.inputLength) : "",
+      signal.data?.txCount !== undefined ? String(signal.data.txCount) : "",
+      signal.data?.interval !== undefined ? String(signal.data.interval) : "",
+      signal.data?.averageVolume !== undefined ? String(signal.data.averageVolume) : ""
+    ].filter(Boolean).join(",") || ""                           // relevantValues
+  ];
+
+  // Join with '|' separator as per spec
+  const payload = components.join("|");
+  
+  // Compute keccak256
+  const hash = keccak256(toUtf8Bytes(payload));
+  
+  // Remove 0x prefix, take first 8 bytes (16 hex chars) for compact ID
+  // Full hash is 32 bytes (64 hex chars), we use 8 bytes for compactness
+  const compactHash = hash.slice(2, 18); // 16 hex chars = 8 bytes
+  
+  return `sig_${compactHash}`;
+}
+
+/**
+ * Build provenance object from signal and block data.
+ */
+function buildProvenance(signal, blockData) {
+  const network = getCurrentNetwork();
+  const provenance = {
+    chain: network.name,
+    chainId: network.chainId,
+    block: signal.data?.blockNumber ?? blockData?.number ?? null,
+    sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || null,
+  };
+  // Only add timestamp if it's a genuine source/event timestamp
+  if (signal.timestamp) {
+    provenance.timestamp = signal.timestamp;
+  }
+  // Add optional fields if available
+  if (signal.data?.from) provenance.from = signal.data.from;
+  if (signal.data?.to) provenance.to = signal.data.to;
+  if (signal.data?.contractAddress) provenance.contractAddress = signal.data.contractAddress;
+  if (signal.data?.logIndex !== undefined) provenance.logIndex = signal.data.logIndex;
+  if (signal.data?.eventSignature) provenance.eventSignature = signal.data.eventSignature;
+  if (signal.data?.blockHash) provenance.blockHash = signal.data.blockHash;
+  return provenance;
+}
+
+/**
+ * Build evidence array from signal's evidence object.
+ * Evidence must be machine-readable and factual.
+ */
+function buildEvidence(signal) {
+  const evidence = [];
+  if (signal.evidence?.txHash) {
+    evidence.push({
+      type: "transaction",
+      value: signal.evidence.txHash,
+      description: "Source transaction hash",
+    });
+  }
+  if (signal.evidence?.block) {
+    evidence.push({
+      type: "block",
+      value: signal.evidence.block,
+      description: "Block number where signal was detected",
+    });
+  }
+  if (signal.data?.inputLength !== undefined) {
+    evidence.push({
+      type: "inputLength",
+      value: signal.data.inputLength,
+      description: "Transaction input length in bytes",
+    });
+  }
+  if (signal.data?.valueUsdc !== undefined) {
+    evidence.push({
+      type: "valueUsdc",
+      value: signal.data.valueUsdc,
+      description: "USDC value transferred",
+    });
+  }
+  if (signal.data?.txCount !== undefined) {
+    evidence.push({
+      type: "txCount",
+      value: signal.data.txCount,
+      description: "Number of transactions in block from same sender",
+    });
+  }
+  if (signal.data?.blockRange) {
+    evidence.push({
+      type: "blockRange",
+      value: signal.data.blockRange,
+      description: "Block range for windowed detection",
+    });
+  }
+  if (signal.data?.averageVolume !== undefined) {
+    evidence.push({
+      type: "averageVolume",
+      value: signal.data.averageVolume,
+      description: "Historical average volume for comparison",
+    });
+  }
+  if (signal.data?.lastSeenBlock !== undefined) {
+    evidence.push({
+      type: "lastSeenBlock",
+      value: signal.data.lastSeenBlock,
+      description: "Last block where address was active",
+    });
+  }
+  if (signal.data?.interval !== undefined) {
+    evidence.push({
+      type: "interval",
+      value: signal.data.interval,
+      description: "Blocks since last activity",
+    });
+  }
+  // Add any other evidence fields from signal.evidence that aren't already covered
+  for (const [key, val] of Object.entries(signal.evidence || {})) {
+    if (!["txHash", "block", "description", "from"].includes(key)) {
+      evidence.push({
+        type: key,
+        value: val,
+        description: `Additional evidence: ${key}`,
+      });
+    }
+  }
+  return evidence;
+}
+
+/**
+ * Build a standardized metadata object for a Signal Artifact.
+ */
+function buildMetadata(signal, blockData, options = {}) {
+  const { artifactNumber = null, customName = null } = options;
+
+  const provenance = buildProvenance(signal, blockData);
+  const signalId = generateSignalId(signal, provenance);
+  const evidence = buildEvidence(signal);
+
+  // Build description from signal's evidence description if available
+  let description = signal.evidence?.description || `Signal of type ${signal.type}`;
+  // Add artifact number if provided
+  if (artifactNumber !== null) {
+    description = `Signal Artifact #${artifactNumber}: ${description}`;
+  }
+
+  const metadata = {
+    name: customName || (artifactNumber !== null ? `Signal Artifact #${artifactNumber}` : "Signal Artifact"),
+    description: description,
+    signalId: signalId,
+    signalType: signal.type,
+    provenance: provenance,
+    signal: {
+      confidence: signal.confidence || 0.8,
+      version: signal.version || "v0",
+    },
+    evidence: evidence,
+    // Additional metadata fields
+    schemaVersion: "v1.0.0",
+    generatedAt: new Date().toISOString(),
+  };
+
+  return metadata;
+}
+
+/**
+ * Validate that metadata contains all required fields.
+ * Returns { valid: boolean, errors: string[] }
+ */
+function validateMetadata(metadata) {
+  const errors = [];
+  const required = [
+    "name",
+    "description",
+    "signalId",
+    "signalType",
+    "provenance",
+    "signal",
+    "evidence",
+  ];
+  for (const field of required) {
+    if (!metadata[field]) {
+      errors.push(`Missing required field: ${field}`);
+    }
+  }
+  if (metadata.provenance) {
+    const provRequired = ["chain", "chainId", "block"];
+    // sourceTransaction is optional; may be null for some signal types (e.g., high_frequency_wallet)
+    for (const field of provRequired) {
+      if (metadata.provenance[field] === undefined || metadata.provenance[field] === null) {
+        errors.push(`Missing provenance field: ${field}`);
+      }
+    }
+    // sourceTransaction is optional, but if present it should be a string
+    if (metadata.provenance.sourceTransaction !== undefined && metadata.provenance.sourceTransaction !== null) {
+      // valid
+    }
+  }
+  if (metadata.signal) {
+    if (metadata.signal.confidence === undefined || metadata.signal.confidence === null) {
+      errors.push("Missing signal.confidence");
+    }
+    if (!metadata.signal.version) {
+      errors.push("Missing signal.version");
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+module.exports = {
+  generateSignalId,
+  buildProvenance,
+  buildEvidence,
+  buildMetadata,
+  validateMetadata,
+};
+=== src/metadata/index.js ===
+5 src/metadata/index.js
+22e75fa287c53a4cd09e20b173c485bc  src/metadata/index.js
+--- content ---
+// src/metadata/index.js
+// Barrel export for metadata module
+
+module.exports = {
+  ...require("./schema"),
+};

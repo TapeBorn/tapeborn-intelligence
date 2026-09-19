@@ -1,0 +1,779 @@
+=== scripts/build_010.js ===
+195 scripts/build_010.js
+52edc270e4a8de73c9aa9e9e54fd8eb7  scripts/build_010.js
+--- content ---
+// BUILD_010 — First Signal Artifact
+// DoD: Mint first testnet NFT representing a verified signal.
+
+const { ethers } = require("ethers");
+const fs = require("fs");
+const path = require("path");
+const solc = require("solc");
+const { getBlockNumber, getChainId } = require("../src/orchestrator/arc");
+const { scanBlocks } = require("../src/signal/engine");
+const { buildMetadata } = require("../src/metadata");
+const { getCurrentNetwork } = require("../src/orchestrator/networks");
+
+const { getRpcUrl } = require("../src/orchestrator/networks");
+const RPC_URL = getRpcUrl();
+const PRIVATE_KEY = process.env.DEV_WALLET_PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  console.error("ERROR: DEV_WALLET_PRIVATE_KEY environment variable is required.");
+  console.error("Set it with: export DEV_WALLET_PRIVATE_KEY=0x...");
+  process.exit(1);
+}
+// Dry-run safety: if DRY_RUN=1, skip actual deployment
+const isDryRun = process.env.DRY_RUN === '1' || process.argv.includes('--dry-run');
+if (isDryRun) {
+  console.log("🔬 DRY RUN MODE — No transactions will be sent.");
+}
+
+// Kontrak Solidity
+const contractSource = `
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
+contract SignalArtifact is ERC721, Ownable, Pausable {
+    uint256 public nextTokenId;
+    mapping(uint256 => string) public tokenURIs;
+
+    constructor() ERC721("SignalArtifact", "SIG") Ownable(msg.sender) {}
+
+    function mint(address to, string memory uri) external onlyOwner whenNotPaused {
+        uint256 tokenId = nextTokenId++;
+        _mint(to, tokenId);
+        tokenURIs[tokenId] = uri;
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        return tokenURIs[tokenId];
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+}
+`;
+
+// Kompilasi kontrak
+function compileContract(source) {
+    const input = {
+        language: "Solidity",
+        sources: {
+            "SignalArtifact.sol": {
+                content: source,
+            },
+        },
+        settings: {
+            outputSelection: {
+                "*": {
+                    "*": ["abi", "evm.bytecode"],
+                },
+            },
+        },
+    };
+    const pathModule = require('path');
+    const output = JSON.parse(solc.compile(JSON.stringify(input), {
+        import: function (importPath) {
+            const fullPath = pathModule.join(__dirname, "../node_modules", importPath);
+            return { contents: fs.readFileSync(fullPath, "utf8") };
+        }
+    }));
+    if (output.errors) {
+        for (const err of output.errors) {
+            console.error(err.formattedMessage || err.message);
+        }
+        throw new Error("Compilation failed");
+    }
+    const contract = output.contracts["SignalArtifact.sol"]["SignalArtifact"];
+    return {
+        abi: contract.abi,
+        bytecode: contract.evm.bytecode.object,
+    };
+}
+
+(async () => {
+    try {
+        // Ambil sinyal terbaru
+        const latest = await getBlockNumber();
+        const fromBlock = Math.max(0, latest - 9);
+        const signals = await scanBlocks(fromBlock, latest);
+        if (signals.length === 0) {
+            console.log("No signals found. Nothing to mint.");
+            process.exit(0);
+        }
+
+        // Pilih sinyal pertama sebagai artefak
+        const signal = signals[0];
+
+        // Siapkan metadata menggunakan BUILD_011 schema
+        const blockData = { number: signal.data.blockNumber };
+        const metadata = buildMetadata(signal, blockData, { artifactNumber: 1 });
+        const metadataURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadata)).toString("base64")}`;
+
+        // Compile kontrak
+        console.log("Compiling contract...");
+        const { abi, bytecode } = compileContract(contractSource);
+        const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+        // Chain ID verification (BUILD_016 hardening)
+        const currentNetwork = getCurrentNetwork();
+        const onChainId = await provider.getNetwork().then(n => Number(n.chainId));
+        if (onChainId !== currentNetwork.chainId) {
+            console.error(`❌ Chain ID mismatch! Expected ${currentNetwork.chainId} (${currentNetwork.name}) but got ${onChainId}.`);
+            console.error(`   RPC: ${RPC_URL}`);
+            console.error(`   Aborting deployment. Set ARC_NETWORK correctly or use the correct RPC.`);
+            process.exit(1);
+        }
+        console.log(`✅ Chain ID verified: ${onChainId} (matches ${currentNetwork.name})`);
+
+        const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+        // Deploy kontrak
+        if (isDryRun) {
+          console.log("🔬 DRY RUN: Skipping actual contract deployment.");
+          const contractAddress = "0x0000000000000000000000000000000000000000";
+          const deployTx = { hash: "0x0000000000000000000000000000000000000000000000000000000000000000" };
+          const tokenIdNumber = 0;
+          const tx = { hash: "0x0000000000000000000000000000000000000000000000000000000000000000" };
+          const artifact = {
+            contractAddress,
+            tokenId: tokenIdNumber,
+            metadata,
+            metadataURI,
+            txHash: tx.hash,
+            deployTxHash: deployTx.hash,
+            simulated: true,
+            note: "Dry run — contract not actually deployed. Set DRY_RUN=0 to deploy for real.",
+          };
+          const artifactPath = path.join(__dirname, "../artifacts/signal_artifact_dryrun.json");
+          fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
+          console.log(`Artifact saved to ${artifactPath}`);
+          console.log("BUILD_010 dry-run completed.");
+          process.exit(0);
+        }
+
+        console.log("Deploying SignalArtifact contract...");
+        const factory = new ethers.ContractFactory(abi, bytecode, wallet);
+        const contract = await factory.deploy();
+        const deployTx = contract.deploymentTransaction();
+        console.log(`Deployment tx: ${deployTx.hash}`);
+        await contract.waitForDeployment();
+        const contractAddress = await contract.getAddress();
+        console.log(`Contract deployed at: ${contractAddress}`);
+
+        // Mint token
+        console.log("Minting token...");
+        const tx = await contract.mint(wallet.address, metadataURI);
+        await tx.wait();
+        const tokenId = await contract.nextTokenId();
+        const tokenIdNumber = Number(tokenId) - 1;
+        console.log(`Token minted! Token ID: ${tokenIdNumber}`);
+
+        // Simpan artefak
+        const artifact = {
+            contractAddress: contractAddress,
+            tokenId: tokenIdNumber,
+            metadata,
+            metadataURI,
+            txHash: tx.hash,
+            deployTxHash: deployTx.hash,
+        };
+        const artifactPath = path.join(__dirname, "../artifacts/signal_artifact.json");
+        fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
+        console.log(`Artifact saved to ${artifactPath}`);
+
+        console.log("BUILD_010 completed successfully.");
+        process.exit(0);
+    } catch (e) {
+        console.error("Error:", e.message);
+        process.exit(1);
+    }
+})();
+=== scripts/deploy-mainnet.js ===
+170 scripts/deploy-mainnet.js
+b6f97fb9c3c322477869b4a0f0956bce  scripts/deploy-mainnet.js
+--- content ---
+#!/usr/bin/env node
+// scripts/deploy-mainnet.js
+// SignalArtifact contract deployment script for Arc Mainnet
+// Usage: node scripts/deploy-mainnet.js [--dry-run] [--verify]
+
+const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
+
+async function main() {
+  const args = process.argv.slice(2);
+  const dryRun = args.includes("--dry-run");
+  const shouldVerify = args.includes("--verify");
+
+  console.log("🚀 SignalArtifact Deployment Script");
+  console.log("=====================================");
+  console.log(`Network: ${dryRun ? "DRY RUN (testnet)" : "arcMainnet"}`);
+  console.log(`Verify: ${shouldVerify ? "Yes" : "No"}`);
+  console.log("");
+
+  // Check required environment variables
+  const requiredEnvVars = ["DEV_WALLET_PRIVATE_KEY"];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      console.error(`❌ Missing required environment variable: ${envVar}`);
+      process.exit(1);
+    }
+  }
+
+  // Get deployer
+  const [deployer] = await ethers.getSigners();
+  console.log(`📝 Deployer: ${deployer.address}`);
+  
+  // Check balance
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log(`💰 Balance: ${ethers.formatEther(balance)} ETH`);
+  
+  if (balance < ethers.parseEther("0.1")) {
+    console.warn("⚠️  Warning: Balance below 0.1 ETH, deployment may fail");
+  }
+
+  // Deployment parameters (R5 admin model)
+  const name = "SignalArtifact";
+  const symbol = "SIG";
+  const baseURI = "https://api.tapeborn.io/metadata/";
+  const mintFee = ethers.parseEther("0.001"); // 0.001 ETH mint fee
+  const maxSupply = 10000; // 10,000 max supply
+
+  console.log("");
+  console.log("📋 Deployment Parameters:");
+  console.log(`   Name: ${name}`);
+  console.log(`   Symbol: ${symbol}`);
+  console.log(`   Base URI: ${baseURI}`);
+  console.log(`   Mint Fee: ${ethers.formatEther(mintFee)} ETH`);
+  console.log(`   Max Supply: ${maxSupply}`);
+  console.log("");
+
+  // Get contract factory
+  const factory = await ethers.getContractFactory("SignalArtifact");
+  
+  // Estimate gas
+  console.log("⛽ Estimating gas...");
+  const deployTx = factory.getDeployTransaction(name, symbol, baseURI, mintFee, maxSupply);
+  const gasEstimate = await ethers.provider.estimateGas(deployTx);
+  const gasPrice = await ethers.provider.getGasPrice();
+  const estimatedCost = gasEstimate * gasPrice;
+  
+  console.log(`   Gas estimate: ${gasEstimate.toString()}`);
+  console.log(`   Gas price: ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
+  console.log(`   Estimated cost: ${ethers.formatEther(estimatedCost)} ETH`);
+  console.log("");
+
+  if (dryRun) {
+    console.log("🔍 DRY RUN - Skipping actual deployment");
+    console.log("✅ Gas estimation successful");
+    process.exit(0);
+  }
+
+  // Deploy contract
+  console.log("📦 Deploying contract...");
+  const contract = await factory.deploy(name, symbol, baseURI, mintFee, maxSupply);
+  
+  console.log(`   Transaction hash: ${contract.deploymentTransaction().hash}`);
+  console.log("   Waiting for confirmation...");
+  
+  await contract.waitForDeployment();
+  const contractAddress = await contract.getAddress();
+  
+  console.log(`✅ Contract deployed at: ${contractAddress}`);
+  console.log("");
+
+  // Verify deployment
+  console.log("🔍 Verifying deployment...");
+  const deployedName = await contract.name();
+  const deployedSymbol = await contract.symbol();
+  const deployedBaseURI = await contract.baseURI();
+  const deployedMintFee = await contract.mintFee();
+  const deployedMaxSupply = await contract.maxSupply();
+  const deployedOwner = await contract.owner();
+  const deployedPaused = await contract.paused();
+
+  console.log(`   Name: ${deployedName} ${deployedName === name ? "✅" : "❌"}`);
+  console.log(`   Symbol: ${deployedSymbol} ${deployedSymbol === symbol ? "✅" : "❌"}`);
+  console.log(`   Base URI: ${deployedBaseURI} ${deployedBaseURI === baseURI ? "✅" : "❌"}`);
+  console.log(`   Mint Fee: ${ethers.formatEther(deployedMintFee)} ETH ${deployedMintFee === mintFee ? "✅" : "❌"}`);
+  console.log(`   Max Supply: ${deployedMaxSupply} ${deployedMaxSupply === maxSupply ? "✅" : "❌"}`);
+  console.log(`   Owner: ${deployedOwner} ${deployedOwner === deployer.address ? "✅" : "❌"}`);
+  console.log(`   Paused: ${deployedPaused} ${!deployedPaused ? "✅" : "❌"}`);
+  console.log("");
+
+  // Save deployment info
+  const deploymentInfo = {
+    network: "arcMainnet",
+    chainId: 5042,
+    contractAddress,
+    deployer: deployer.address,
+    deploymentTx: contract.deploymentTransaction().hash,
+    blockNumber: (await ethers.provider.getTransactionReceipt(contract.deploymentTransaction().hash)).blockNumber,
+    timestamp: new Date().toISOString(),
+    parameters: {
+      name,
+      symbol,
+      baseURI,
+      mintFee: mintFee.toString(),
+      maxSupply: maxSupply.toString()
+    },
+    verified: false
+  };
+
+  const deploymentsDir = path.join(__dirname, "..", "deployments");
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
+
+  const deploymentFile = path.join(deploymentsDir, `deployment-${Date.now()}.json`);
+  fs.writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2));
+  console.log(`💾 Deployment info saved to: ${deploymentFile}`);
+
+  // Verify on explorer if requested
+  if (shouldVerify) {
+    console.log("");
+    console.log("🔍 Verifying contract on Arc Explorer...");
+    try {
+      await hre.run("verify:verify", {
+        address: contractAddress,
+        constructorArguments: [name, symbol, baseURI, mintFee, maxSupply],
+      });
+      console.log("✅ Contract verified on Arc Explorer");
+      
+      // Update deployment info
+      deploymentInfo.verified = true;
+      fs.writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2));
+    } catch (error) {
+      console.error("❌ Verification failed:", error.message);
+      console.log("   You can verify manually later with:");
+      console.log(`   npx hardhat verify --network arcMainnet ${contractAddress} "${name}" "${symbol}" "${baseURI}" ${mintFee} ${maxSupply}`);
+    }
+  }
+
+  console.log("");
+  console.log("🎉 Deployment complete!");
+  console.log(`   Contract: ${contractAddress}`);
+  console.log(`   Explorer: https://explorer.mainnet.arc.io/address/${contractAddress}`);
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("❌ Deployment failed:", error);
+    process.exit(1);
+  });
+=== scripts/preflight-mainnet.js ===
+188 scripts/preflight-mainnet.js
+f6b61f5e7b0dff9234347b130d828ea4  scripts/preflight-mainnet.js
+--- content ---
+// scripts/preflight-mainnet.js
+// BUILD_014: Arc Mainnet Readiness — Preflight checks
+// READ-ONLY — no transactions, no deployments
+
+const { ethers } = require('ethers');
+const fs = require('fs');
+const path = require('path');
+const { getNetwork, getCurrentNetwork, isMainnet, NETWORKS } = require('../src/orchestrator/networks');
+
+const results = {
+  checks: [],
+  passed: true,
+};
+
+function check(description, fn) {
+  try {
+    const result = fn();
+    results.checks.push({ description, status: result ? 'PASS' : 'FAIL' });
+    if (!result) results.passed = false;
+    return result;
+  } catch (e) {
+    results.checks.push({ description, status: 'ERROR', error: e.message });
+    results.passed = false;
+    return false;
+  }
+}
+
+async function runPreflight() {
+  console.log('\n🔍 TapeBorn — Mainnet Readiness Preflight');
+  console.log('========================================\n');
+
+  // 0. Probe mainnet RPC FIRST (read-only) so later checks can use the result
+  let mainnetReachable = false;
+  let mainnetChainId = null;
+  try {
+    const mainnetRpc = NETWORKS.mainnet.rpcUrl;
+    if (mainnetRpc) {
+      const provider = new ethers.JsonRpcProvider(mainnetRpc);
+      const networkInfo = await provider.getNetwork();
+      const onChainId = Number(networkInfo.chainId);
+      mainnetChainId = onChainId;
+      mainnetReachable = true;
+    }
+  } catch (e) {
+    mainnetReachable = false;
+    mainnetChainId = null;
+  }
+
+  // 1. Check network configuration
+  check('Network config exists for testnet', () => {
+    return !!NETWORKS.testnet && NETWORKS.testnet.chainId === 5042002;
+  });
+
+  check('Network config exists for mainnet', () => {
+    return !!NETWORKS.mainnet && typeof NETWORKS.mainnet.chainId === 'number';
+  });
+
+  // 2. Check that mainnet is not the default
+  check('Default network is testnet (safe)', () => {
+    const defaultNet = process.env.ARC_NETWORK || 'testnet';
+    return defaultNet === 'testnet';
+  });
+
+  // 3. Check for .env files (should not be committed)
+  const envFiles = ['.env', '.env.local', '.env.production', '.env.mainnet'];
+  check('No .env files in repository (secrets not committed)', () => {
+    const repoRoot = path.join(__dirname, '..');
+    const hasEnv = envFiles.some(f => fs.existsSync(path.join(repoRoot, f)));
+    return !hasEnv;
+  });
+
+  // 4. Check for hardcoded private keys in source
+  // A real private key is a non-zero hex string (65 bytes incl. 0x prefix).
+  // Zero hashes (0x000...000) and well-known event signatures are NOT private keys.
+  check('No hardcoded private keys in source', () => {
+    const srcDir = path.join(__dirname, '..', 'src');
+    const scriptsDir = path.join(__dirname, '..', 'scripts');
+    const dirs = [srcDir, scriptsDir];
+    const ZERO_HASH = '0x' + '0'.repeat(64);
+    const KNOWN_SAFE_HASHES = new Set([
+      // ERC-20 Transfer event signature
+      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+      // ERC-20 Approval event signature
+      '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+      // WETH Deposit event signature
+      '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c',
+      // WETH Withdrawal event signature
+      '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65',
+      // Sample genesis transaction hash (used in trace_derivation_prototype.js for testing)
+      '0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587',
+    ]);
+    let hasKey = false;
+    for (const dir of dirs) {
+      if (!fs.existsSync(dir)) continue;
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        if (!file.endsWith('.js')) continue;
+        const content = fs.readFileSync(path.join(dir, file), 'utf8');
+        // Look for hardcoded private keys:
+        //   - variable assignment like privateKey = '0x...'
+        //   - literal non-zero 64-hex-char strings (real private keys are non-zero)
+        const privateKeyAssignment = /privateKey\s*=\s*['"](0x[0-9a-fA-F]{64})['"]/.exec(content);
+        if (privateKeyAssignment) {
+          hasKey = true;
+          break;
+        }
+        const hexMatches = content.match(/0x[0-9a-fA-F]{64}/g);
+        if (hexMatches) {
+          for (const hex of hexMatches) {
+            // Skip zero hashes and well-known event signatures
+            if (hex === ZERO_HASH) continue;
+            if (KNOWN_SAFE_HASHES.has(hex.toLowerCase())) continue;
+            // Skip lines that are clearly comments, docs, or test fixtures
+            const lines = content.split('\n');
+            const isComment = lines.some(line =>
+              line.includes(hex) &&
+              (line.trim().startsWith('//') || line.trim().startsWith('*') || line.includes('placeholder') || line.includes('example'))
+            );
+            if (isComment) continue;
+            // Non-zero, non-signature, non-comment hex = potential private key
+            hasKey = true;
+            break;
+          }
+        }
+        if (hasKey) break;
+      }
+      if (hasKey) break;
+    }
+    return !hasKey;
+  });
+
+  // 5. Check RPC connectivity (testnet)
+  try {
+    const testnetRpc = NETWORKS.testnet.rpcUrl;
+    const provider = new ethers.JsonRpcProvider(testnetRpc);
+    const chainId = await provider.getNetwork();
+    check(`Testnet RPC reachable (chainId ${chainId.chainId})`, () => {
+      return chainId.chainId === 5042002n;
+    });
+  } catch (e) {
+    check('Testnet RPC reachable', () => false);
+    results.checks[results.checks.length - 1].error = e.message;
+  }
+
+  // 6. Check mainnet RPC connectivity — now using pre-probed results
+  check('Mainnet RPC configured', () => {
+    return !!NETWORKS.mainnet && !!NETWORKS.mainnet.rpcUrl;
+  });
+  check('Mainnet RPC reachable', () => {
+    if (!mainnetReachable) {
+      results.checks[results.checks.length - 1].error = 'RPC not reachable';
+      return false;
+    }
+    // Update description with actual chain ID
+    results.checks[results.checks.length - 1].description = `Mainnet RPC reachable (chainId ${mainnetChainId})`;
+    return true;
+  });
+  check('Mainnet RPC verified official (chainId 5042)', () => {
+    return mainnetChainId === 5042;
+  });
+
+  // 7. Check that testnet deployment config works
+  check('Testnet configuration is functional (dry-run)', () => {
+    // This is a static check — the actual dry-run will be run separately
+    return true;
+  });
+
+  // Print summary
+  console.log('\n📋 Preflight Results:\n');
+  for (const c of results.checks) {
+    const icon = c.status === 'PASS' ? '✅' : c.status === 'FAIL' ? '❌' : '⚠️';
+    console.log(`  ${icon} ${c.status}: ${c.description}${c.error ? ' (' + c.error + ')' : ''}`);
+  }
+
+  console.log('\n' + '='.repeat(40));
+  if (results.passed) {
+    console.log('✅ All preflight checks PASSED. Ready for mainnet deployment planning.');
+  } else {
+    console.log('❌ Some preflight checks FAILED. Review issues above before mainnet deployment.');
+  }
+  console.log('='.repeat(40) + '\n');
+
+  process.exit(results.passed ? 0 : 1);
+}
+
+runPreflight().catch(e => {
+  console.error('Preflight error:', e.message);
+  process.exit(1);
+});
+=== scripts/verify-contract.js ===
+137 scripts/verify-contract.js
+61453fac5c0b57b68ba2b860ce1130ac  scripts/verify-contract.js
+--- content ---
+#!/usr/bin/env node
+// scripts/verify-contract.js
+// SignalArtifact contract verification script for Arc Explorer
+// Usage: node scripts/verify-contract.js <contractAddress> [network]
+
+const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
+
+async function main() {
+  const args = process.argv.slice(2);
+  
+  if (args.length < 1) {
+    console.error("Usage: node scripts/verify-contract.js <contractAddress> [network]");
+    console.error("Network defaults to arcMainnet");
+    process.exit(1);
+  }
+
+  const contractAddress = args[0];
+  const network = args[1] || "arcMainnet";
+
+  console.log("🔍 SignalArtifact Contract Verification");
+  console.log("========================================");
+  console.log(`Contract: ${contractAddress}`);
+  console.log(`Network: ${network}`);
+  console.log("");
+
+  // Check if address is valid
+  if (!ethers.isAddress(contractAddress)) {
+    console.error("❌ Invalid contract address");
+    process.exit(1);
+  }
+
+  try {
+    // Get contract factory
+    const factory = await ethers.getContractFactory("SignalArtifact");
+    
+    // Attach to deployed contract
+    const contract = factory.attach(contractAddress);
+    
+    // Read constructor arguments from deployment file or prompt
+    let deploymentsDir = path.join(__dirname, "..", "deployments");
+    let constructorArgs = null;
+    
+    if (fs.existsSync(deploymentsDir)) {
+      const files = fs.readdirSync(deploymentsDir)
+        .filter(f => f.endsWith(".json"))
+        .sort()
+        .reverse();
+      
+      for (const file of files) {
+        const deployment = JSON.parse(fs.readFileSync(path.join(deploymentsDir, file), "utf8"));
+        if (deployment.contractAddress.toLowerCase() === contractAddress.toLowerCase()) {
+          constructorArgs = [
+            deployment.parameters.name,
+            deployment.parameters.symbol,
+            deployment.parameters.baseURI,
+            deployment.parameters.mintFee,
+            deployment.parameters.maxSupply
+          ];
+          console.log(`📄 Found deployment info: ${file}`);
+          break;
+        }
+      }
+    }
+    
+    if (!constructorArgs) {
+      console.log("⚠️  No deployment info found, using default parameters");
+      constructorArgs = [
+        "SignalArtifact",
+        "SIG",
+        "https://api.tapeborn.io/metadata/",
+        "1000000000000000", // 0.001 ETH
+        "10000"
+      ];
+    }
+
+    console.log("📋 Constructor arguments:");
+    console.log(`   Name: ${constructorArgs[0]}`);
+    console.log(`   Symbol: ${constructorArgs[1]}`);
+    console.log(`   Base URI: ${constructorArgs[2]}`);
+    console.log(`   Mint Fee: ${ethers.formatEther(constructorArgs[3])} ETH`);
+    console.log(`   Max Supply: ${constructorArgs[4]}`);
+    console.log("");
+
+    // Verify contract
+    console.log("🔍 Verifying contract on Arc Explorer...");
+    
+    await hre.run("verify:verify", {
+      address: contractAddress,
+      constructorArguments: constructorArgs,
+    });
+
+    console.log("✅ Contract verified successfully!");
+    console.log(`   Explorer: https://explorer.mainnet.arc.io/address/${contractAddress}`);
+    
+    // Update deployment file if exists
+    if (fs.existsSync(deploymentsDir)) {
+      const files = fs.readdirSync(deploymentsDir)
+        .filter(f => f.endsWith(".json"))
+        .sort()
+        .reverse();
+      
+      for (const file of files) {
+        const deploymentPath = path.join(deploymentsDir, file);
+        const deployment = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+        if (deployment.contractAddress.toLowerCase() === contractAddress.toLowerCase()) {
+          deployment.verified = true;
+          deployment.verifiedAt = new Date().toISOString();
+          fs.writeFileSync(deploymentPath, JSON.stringify(deployment, null, 2));
+          console.log(`💾 Updated deployment record: ${file}`);
+          break;
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error("❌ Verification failed:", error.message);
+    
+    if (error.message.includes("Already Verified")) {
+      console.log("ℹ️  Contract is already verified on the explorer");
+      process.exit(0);
+    }
+    
+    console.log("");
+    console.log("💡 Manual verification command:");
+    console.log(`npx hardhat verify --network ${network} ${contractAddress} "${constructorArgs[0]}" "${constructorArgs[1]}" "${constructorArgs[2]}" ${constructorArgs[3]} ${constructorArgs[4]}`);
+    
+    process.exit(1);
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error("❌ Verification failed:", error);
+    process.exit(1);
+  });
+=== scripts/trace_derivation_prototype.js ===
+64 scripts/trace_derivation_prototype.js
+781e6f20f8a0abb197b02effce30cca8  scripts/trace_derivation_prototype.js
+--- content ---
+/**
+ * Trace-linked Mint Mechanic Prototype
+ * Derives deterministic Trace trait from on-chain data (txHash, blockNumber)
+ *
+ * Algorithm:
+ * 1. Combine txHash (without 0x) and blockNumber (as decimal string) into a single string.
+ * 2. Compute keccak256 hash of that string to get a 32-byte seed.
+ * 3. Use the seed to derive:
+ *    - entryX: (seed[0] % 10)  // 0-9
+ *    - entryY: (seed[1] % 10)  // 0-9
+ *    - exitX:  (seed[2] % 10)  // 0-9
+ *    - exitY:  (seed[3] % 10)  // 0-9
+ *    - bendCount: 1 + (seed[4] % 2) // 1 or 2
+ * 4. Ensure entry and exit points are not the same; if they are, shift exit by +1 mod 10.
+ *
+ * Returns an object: { entry: [x, y], exit: [x, y], bends: number }
+ */
+
+const { keccak256, toUtf8Bytes } = require('ethers');
+
+function deriveTrace(txHash, blockNumber) {
+  // Normalize inputs
+  const cleanTxHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
+  const blockStr = String(blockNumber);
+  const input = cleanTxHash + blockStr;
+
+  // Generate seed
+  const hash = keccak256(toUtf8Bytes(input));
+  // Remove 0x, get bytes
+  const hashBytes = hash.slice(2);
+  // Convert hex to bytes array
+  const bytes = [];
+  for (let i = 0; i < hashBytes.length; i += 2) {
+    bytes.push(parseInt(hashBytes.substring(i, i + 2), 16));
+  }
+
+  // Derive values
+  let entryX = bytes[0] % 10;
+  let entryY = bytes[1] % 10;
+  let exitX = bytes[2] % 10;
+  let exitY = bytes[3] % 10;
+  let bends = 1 + (bytes[4] % 2); // 1 or 2
+
+  // Ensure entry != exit
+  if (entryX === exitX && entryY === exitY) {
+    // Shift exit by +1 mod 10 on X
+    exitX = (exitX + 1) % 10;
+  }
+
+  return {
+    entry: [entryX, entryY],
+    exit: [exitX, exitY],
+    bends: bends
+  };
+}
+
+module.exports = { deriveTrace };
+
+// If run directly, test with sample data
+if (require.main === module) {
+  const sampleTx = '0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587';
+  const sampleBlock = 60347218;
+  const trace = deriveTrace(sampleTx, sampleBlock);
+  console.log('Sample Trace:', trace);
+}

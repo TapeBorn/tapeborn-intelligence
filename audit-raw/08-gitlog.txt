@@ -1,0 +1,50 @@
+3a06ba6 BUILD_037: Independent security review preparation (R8)
+79e9f1a BUILD_036: Production infrastructure hardening (R7)
+062e881 BUILD_035: Adversarial testing suite (R6)
+3c8f2d6 BUILD_034: Freeze smart contract admin model (R5)
+ff6cbd6 BUILD_033: Persistent signal state with SQLite (R4)
+893f7a6 BUILD_032: Implement canonical Signal ID with keccak256 (R3)
+559fdd5 BUILD_031: Freeze signal specifications v1.0.0 (R2)
+553e090 BUILD_030: Lock reproducible development environment (R1)
+d7cdf70 AUDIT_001: Add system audit v0.1 + current system snapshot (R0)
+57648c5 BUILD_029 Part 1: Add behavioral access-control tests for SignalArtifact contract
+e58a2af BUILD_026: Add Ownable + Pausable access control to SignalArtifact contract
+11d18a2 BUILD_024: Fix preflight mainnet RPC check order — probe RPC first before checks, add genesis tx hash to safe list
+43dc492 Add Trace derivation prototype (scripts/trace_derivation_prototype.js) and tests (tests/trace-derivation.test.js) for Trace-linked Mint mechanic
+e41d964 Revise UTILITY_ROADMAP.md: prioritize Trace-linked Mint, deprioritize Token-gated API, add Signal Points & Credibility Tier, add future considerations
+f35edf9 Sync README.md milestones with MASTER_ROADMAP.md: use exact commit descriptions, set BUILD_009 UNVERIFIED, clarify BUILD_021 description
+0e2eeae Update MASTER_ROADMAP.md: use exact commit messages as descriptions for BUILD_001-BUILD_023, mark missing BUILD_009 and BUILD_021 as NOT VERIFIED
+777dc90 Add MASTER_ROADMAP.md: canonical 23-milestone reference (BUILD_001-BUILD_023)
+e776132 Update README.md: add full milestones table BUILD_001-BUILD_023 with statuses
+c1498b6 Add UTILITY_ROADMAP.md: planned utility features for TapeBorn NFT holders
+6285014 Add MASTER_ROADMAP.md: complete 23-milestone roadmap referenced in README
+45af35d Update README.md: update milestones table for BUILD_018-BUILD_023 with correct statuses and add BUILD_023
+7d1c606 BUILD_023: Agent interface hardening and documentation reconciliation
+14647cf BUILD_022.1: Harden mainnet deployment gate
+a4023de BUILD_020: Add read-only agent interface
+7e45893 BUILD_019: Signal Expansion — add 4 new signal types: contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation
+214b2fb FORENSIC HARDENING: canonical signal identity and artifact verification
+b579664 BUILD_018: Signal Intelligence v1
+c9f3d30 BUILD_017: Post-launch intelligence and chain evaluation
+ad6006f BUILD_016: Mainnet readiness and deployment hardening
+707483a BUILD_015: Finalize Genesis Collection
+2aa6140 BUILD_014: Add Arc mainnet readiness
+8f51a0e fix: correct inputLength assertion in engine test
+91a470c BUILD_013: Add reliability layer
+f7dcd31 BUILD_012: Add public signal dashboard
+def33bf BUILD_010: Deploy first Signal Artifact on Arc Testnet
+be4fc9b fix: compiler import callback and remove deprecated basePath/includePath
+c0e1881 BUILD_010: Integrate standardized metadata system
+58e2790 BUILD_011.1: Harden provenance timestamp integrity
+eed6f4c BUILD_011: Metadata system — provenance and Signal ID
+c960025 BUILD_010: First Signal Artifact (dry-run) — generated metadata for contract creation signal
+75d873b BUILD_008: Signal Engine v0 — contract creation detector, 1 signal from 10 blocks
+947c76e BUILD_007: Wallet activity — 255 wallets, 447 tx, 108.86 USDC volume across 16 blocks
+a81b014 BUILD_006: USDC flow — 14 transfers, 70.58 USDC volume across 6 blocks
+3ce125e BUILD_005: Event reader — decoded 157 Transfer events, 21 Approvals from 227 logs
+b2127db docs: mark BUILD_004 as DONE
+f3206f9 BUILD_004: Transaction reader — 3 tx + receipts, 10 logs decoded at block 60,246,719
+9af8aa5 docs: remove duplicate BUILD_003 row in README table
+9de45ab BUILD_003: Block reader — 173 tx inspected at block 60,244,318 (4 contract creations in sample)
+d7d14af BUILD_002: Arc RPC reader — verified block 60,241,937 on chain 5042002
+30ef395 Initial commit
