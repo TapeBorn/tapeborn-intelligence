@@ -83,6 +83,26 @@ function getSignalStateInstance() {
   return global._signalStateInstance;
 }
 
+// Reset function to clear global cache (for tests)
+function resetSignalStateGlobal() {
+  if (global._signalStateInstance) {
+    try {
+      // Clear the address_last_seen table before closing
+      global._signalStateInstance.db.prepare('DELETE FROM address_last_seen').run();
+    } catch (e) {
+      // ignore errors
+    }
+    try {
+      global._signalStateInstance.close();
+    } catch (e) {
+      // ignore close errors
+    }
+    global._signalStateInstance = null;
+  }
+  _signalStateCache = null;
+  _signalStateCacheEnv = null;
+}
+
 // Export signalState getter for backward compatibility
 const signalState = {
   getLastSeen: (address) => getSignalStateInstance().getLastSeen(address),
@@ -96,7 +116,8 @@ const signalState = {
   deleteState: (key) => getSignalStateInstance().deleteState(key),
   pruneOldAddressRecords: (olderThanTimestamp) => getSignalStateInstance().pruneOldAddressRecords(olderThanTimestamp),
   close: () => getSignalStateInstance().close(),
-  isClosed: () => getSignalStateInstance().isClosed ? getSignalStateInstance().isClosed() : false
+  isClosed: () => getSignalStateInstance().isClosed ? getSignalStateInstance().isClosed() : false,
+  reset: resetSignalStateGlobal
 };
 
 /**
@@ -380,9 +401,10 @@ function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbs
 function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressReactivationThreshold) {
   const signals = [];
   const txs = block.transactions || [];
-  const currentBlock = hexToInt(block.number);
+  const currentBlock = hexToInt(block.number || "0x0");
   for (const tx of txs) {
     const from = tx.from;
+    if (!from) continue; // Skip transactions without from address
     const normalizedAddress = from.toLowerCase();
     const lastSeenData = getSignalStateInstance().getLastSeen(normalizedAddress);
     const lastSeen = lastSeenData.lastSeenBlock;

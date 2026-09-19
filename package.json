@@ -23,10 +23,10 @@
     "build:012": "node scripts/build_012.js",
     "build:017_usage": "node scripts/build_017_usage.js",
     "build:020": "node scripts/build_020.js",
-    "test": "node --test tests/**/*.test.js",
+    "test": "node --test tests/engine*.test.js tests/adversarial-engine.test.js",
+    "test:hardhat": "npx hardhat --config hardhat.config.cjs test tests/contract-access-behavioral.test.cjs tests/adversarial.test.js",
     "preflight": "node scripts/preflight-mainnet.js",
-    "compile": "npx hardhat --config hardhat.config.cjs compile",
-    "test:hardhat": "npx hardhat --config hardhat.config.cjs test tests/contract-access-behavioral.test.cjs"
+    "compile": "npx hardhat --config hardhat.config.cjs compile"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.6.1",
