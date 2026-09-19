@@ -174,9 +174,8 @@ test('detectLargeTransfers: zero value', () => {
 });
 
 test('detectLargeTransfers: detect transfers above threshold', () => {
-  // 100 USDC = 100 * 10^18 wei = 100000000000000000000
-  // hex: 0x152d02c7e14af6800000
-  const block = { number: '0x1', transactions: [{ from: '0xaaa', to: '0xbbb', value: '0x152d02c7e14af6800000', hash: '0x1' }] };
+  // 100 USDC with 6 decimals = 100 * 10^6 = 100,000,000 = 0x5F5E100
+  const block = { number: '0x1', transactions: [{ from: '0xaaa', to: '0xbbb', value: '0x5F5E100', hash: '0x1' }] };
   const signals = detectLargeTransfers(block, 50);
   assert.strictEqual(signals.length, 1);
   assert.strictEqual(signals[0].type, 'large_transfer');
@@ -184,8 +183,8 @@ test('detectLargeTransfers: detect transfers above threshold', () => {
 });
 
 test('detectLargeTransfers: NOT detect transfers below threshold', () => {
-  // 10 USDC = 10 * 10^18 = 10000000000000000000 = 0x2386f26fc10000000
-  const block = { number: '0x1', transactions: [{ from: '0xaaa', to: '0xbbb', value: '0x2386f26fc10000000', hash: '0x1' }] };
+  // 10 USDC with 6 decimals = 10 * 10^6 = 10,000,000 = 0x989680
+  const block = { number: '0x1', transactions: [{ from: '0xaaa', to: '0xbbb', value: '0x989680', hash: '0x1' }] };
   const signals = detectLargeTransfers(block, 50);
   assert.strictEqual(signals.length, 0);
 });

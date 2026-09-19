@@ -35,7 +35,7 @@ function decodeUint(data, offset = 0) {
   return BigInt("0x" + slice);
 }
 
-function decodeTransfer(log) {
+function decodeTransfer(log, decimals = 18) {
   // ERC-20 Transfer: indexed topics [0]=sig, [1]=from, [2]=to; data = value
   const topics = log.topics || [];
   if (topics.length < 3) return null;
@@ -48,17 +48,18 @@ function decodeTransfer(log) {
     try { value = BigInt(log.data); } catch (_) { value = 0n; }
   }
 
+  const divisor = 10 ** decimals;
   return {
     event: "Transfer",
     from,
     to,
     valueWei: "0x" + value.toString(16),
     valueDec: value.toString(),
-    valueHuman: Number(value) / 1e18, // assuming 18 decimals; adjust per token
+    valueHuman: Number(value) / divisor,
   };
 }
 
-function decodeApproval(log) {
+function decodeApproval(log, decimals = 18) {
   const topics = log.topics || [];
   if (topics.length < 3) return null;
   if (topics[0] !== SIGNATURES.APPROVAL) return null;
@@ -70,13 +71,14 @@ function decodeApproval(log) {
     try { value = BigInt(log.data); } catch (_) { value = 0n; }
   }
 
+  const divisor = 10 ** decimals;
   return {
     event: "Approval",
     owner,
     spender,
     valueWei: "0x" + value.toString(16),
     valueDec: value.toString(),
-    valueHuman: Number(value) / 1e18,
+    valueHuman: Number(value) / divisor,
   };
 }
 

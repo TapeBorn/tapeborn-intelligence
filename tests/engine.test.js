@@ -19,6 +19,32 @@ test('Engine: detectLargeTransfers returns signals for large values', () => {
   assert.ok(signals[0].data.valueUsdc >= 50);
 });
 
+test('Engine: detectLargeTransfers USDC decimals (6) - 50M units = 50 USDC', () => {
+  // 50,000,000 USDC base units (6 decimals) = 50 USDC
+  const block = {
+    number: '0x12345',
+    transactions: [
+      { from: '0xa', to: '0xb', value: '0x2FAF080', hash: '0x1' }, // 50,000,000 in hex
+    ]
+  };
+  const signals = detectLargeTransfers(block, 50);
+  assert.ok(signals.length === 1, 'should detect transfer >= 50 USDC threshold');
+  assert.ok(Math.abs(signals[0].data.valueUsdc - 50) < 0.001, `valueUsdc should be 50, got ${signals[0].data.valueUsdc}`);
+});
+
+test('Engine: detectLargeTransfers USDC decimals (6) - 1M units = 1 USDC', () => {
+  // 1,000,000 USDC base units (6 decimals) = 1 USDC
+  const block = {
+    number: '0x12345',
+    transactions: [
+      { from: '0xa', to: '0xb', value: '0xF4240', hash: '0x1' }, // 1,000,000 in hex
+    ]
+  };
+  const signals = detectLargeTransfers(block, 0.5);
+  assert.ok(signals.length === 1, 'should detect transfer >= 0.5 USDC threshold');
+  assert.ok(Math.abs(signals[0].data.valueUsdc - 1) < 0.001, `valueUsdc should be 1, got ${signals[0].data.valueUsdc}`);
+});
+
 test('Engine: detectContractCreations returns signals for to=null', () => {
   const block = {
     number: '0x12345',

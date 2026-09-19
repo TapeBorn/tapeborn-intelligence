@@ -58,7 +58,7 @@ function validateTransaction(tx, context = 'tx') {
 }
 
 function isValidHexString(str) {
-  return typeof str === 'string' && /^0x[0-9a-fA-F]*$/.test(str);
+  return typeof str === 'string' && /^0x[0-9a-fA-F]*$/i.test(str);
 }
 
 function isValidAddress(str) {

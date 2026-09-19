@@ -22,6 +22,8 @@ const CONFIG = {
   tokenFlowAnomalyWindowBlocks: 100, // rolling window for chain average
   addressReactivationThreshold: 100, // blocks of inactivity
   maxBlocks: 10,
+  usdcDecimals: 6, // USDC uses 6 decimals
+  usdcAddress: process.env.ARC_USDC_ADDRESS || null, // USDC contract address per network (configured via env)
 };
 
 // Signal types per signal-spec.yaml v1.0.0
@@ -188,9 +190,10 @@ function createSignal(type, data, evidence) {
 function detectLargeTransfers(block, threshold = CONFIG.largeTransferThreshold) {
   const signals = [];
   const txs = block.transactions || [];
+  const usdcDivisor = 10 ** CONFIG.usdcDecimals;
   for (const tx of txs) {
     const value = BigInt(tx.value || "0x0");
-    const valueUsdc = Number(value) / 1e18;
+    const valueUsdc = Number(value) / usdcDivisor;
     if (valueUsdc >= threshold) {
       signals.push(createSignal(
         SIGNAL_TYPES.LARGE_TRANSFER,
@@ -201,7 +204,7 @@ function detectLargeTransfers(block, threshold = CONFIG.largeTransferThreshold) 
           valueUsdc,
           blockNumber: hexToInt(block.number),
           txHash: tx.hash,
-          tokenAddress: "0x...", // USDC contract - should be per chain config
+          tokenAddress: CONFIG.usdcAddress,
         },
         {
           block: block.number,
@@ -305,7 +308,7 @@ function detectContractInteractions(block, knownContracts = []) {
             txHash: tx.hash,
             inputLength,
             contractAddress: tx.to,
-            valueUsdc: Number(BigInt(tx.value || "0x0")) / 1e18,
+            valueUsdc: Number(BigInt(tx.value || "0x0")) / (10 ** CONFIG.usdcDecimals),
           },
           {
             block: block.number,
@@ -365,9 +368,10 @@ function detectWalletBurst(block, threshold = CONFIG.walletBurstThreshold) {
 function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbsolute) {
   const signals = [];
   const txs = block.transactions || [];
+  const usdcDivisor = 10 ** CONFIG.usdcDecimals;
   for (const tx of txs) {
     const value = BigInt(tx.value || "0x0");
-    const valueUsdc = Number(value) / 1e18;
+    const valueUsdc = Number(value) / usdcDivisor;
     // Per spec: threshold = max(2 * chainAverageUSDC(last_100_blocks), 1000 USDC)
     // For now using minimum absolute threshold; chain average requires persistent state
     const effectiveThreshold = Math.max(threshold, CONFIG.tokenFlowAnomalyMinAbsolute);
