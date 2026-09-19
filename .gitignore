@@ -100,8 +100,6 @@ dist
 
 # vitepress build output
 **/.vitepress/dist
-
-# vitepress cache directory
 **/.vitepress/cache
 
 # Docusaurus cache and generated files
@@ -141,3 +139,14 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Hardhat build artifacts
+artifacts/
+cache/
+artifacts/build-info/
+
+# Node version
+.nvmrc
+
+# NPM config
+.npmrc

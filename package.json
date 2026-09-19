@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "commonjs",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.18.0"
   },
   "scripts": {
     "build:002": "node scripts/build_002.js",
@@ -21,14 +21,20 @@
     "build:010_dryrun": "node scripts/build_010_dryrun.js",
     "build:011": "node scripts/build_011.js",
     "build:012": "node scripts/build_012.js",
+    "build:017_usage": "node scripts/build_017_usage.js",
+    "build:020": "node scripts/build_020.js",
     "test": "node --test tests/**/*.test.js",
     "preflight": "node scripts/preflight-mainnet.js",
-"build:017_usage": "node scripts/build_017_usage.js",
-    "build:020": "node scripts/build_020.js"
+    "compile": "npx hardhat --config hardhat.config.cjs compile",
+    "test:hardhat": "npx hardhat --config hardhat.config.cjs test tests/contract-access-behavioral.test.cjs"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.6.1",
-    "ethers": "^6.17.0",
-    "solc": "^0.8.36"
+    "@openzeppelin/contracts": "5.6.1",
+    "ethers": "6.17.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "6.1.2",
+    "hardhat": "2.29.1",
+    "solc": "0.8.24"
   }
 }
