@@ -160,19 +160,108 @@ function computeSignalQuality(type, data, evidence) {
  * Generate a signal object with canonical Signal ID per signal-spec.yaml v1.0.0
  * Signal ID uses keccak256 canonical payload per signal-spec.yaml
  * Signal version per signal-spec.yaml v1.0.0
+ * Each signal type defines its own identity fields for collision-free IDs
  */
 function createSignal(type, data, evidence) {
   const quality = computeSignalQuality(type, data, evidence);
+  
   // Build provenance-like object for deterministic ID generation
-  const provenance = {
-    block: data?.blockNumber || data?.block || '0',
-    sourceTransaction: evidence?.txHash || data?.txHash || '0x',
-    from: data?.from || evidence?.from || '0x',
-    to: data?.to || '',
-    contractAddress: data?.contractAddress || '',
-    blockHash: data?.blockHash || '0x',
-    logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
-  };
+  // Use type-specific identity fields per signal-spec.yaml
+  let provenance;
+  
+  switch (type) {
+    case SIGNAL_TYPES.LARGE_TRANSFER:
+    case SIGNAL_TYPES.TOKEN_FLOW_ANOMALY:
+      // These require txHash - use from, to, txHash
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+        from: data?.from || evidence?.from || '0x',
+        to: data?.to || '',
+        contractAddress: data?.contractAddress || '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+      };
+      break;
+      
+    case SIGNAL_TYPES.CONTRACT_CREATION:
+      // Requires txHash - use from, txHash
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+        from: data?.from || evidence?.from || '0x',
+        to: '',
+        contractAddress: '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+      };
+      break;
+      
+    case SIGNAL_TYPES.HIGH_FREQUENCY_WALLET:
+      // No txHash required - use sender address + block as identity
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: null, // Not required for this signal type
+        from: data?.address || data?.sender || '0x',
+        to: '',
+        contractAddress: '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: '0',
+      };
+      break;
+      
+    case SIGNAL_TYPES.CONTRACT_INTERACTION:
+      // Requires txHash - use from, to (contract), txHash
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+        from: data?.from || evidence?.from || '0x',
+        to: data?.contractAddress || data?.to || '',
+        contractAddress: data?.contractAddress || '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+      };
+      break;
+      
+    case SIGNAL_TYPES.WALLET_BURST:
+      // No txHash required - use sender + firstBlock as identity
+      provenance = {
+        block: data?.firstBlock || data?.blockNumber || data?.block || '0',
+        sourceTransaction: null, // Not required for this signal type
+        from: data?.sender || '0x',
+        to: '',
+        contractAddress: '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: '0',
+      };
+      break;
+      
+    case SIGNAL_TYPES.ADDRESS_REACTIVATION:
+      // Requires txHash - use from, txHash
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+        from: data?.from || '0x',
+        to: '',
+        contractAddress: '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+      };
+      break;
+      
+    default:
+      // Fallback - should not happen
+      provenance = {
+        block: data?.blockNumber || data?.block || '0',
+        sourceTransaction: evidence?.txHash || data?.txHash || '0x',
+        from: data?.from || evidence?.from || '0x',
+        to: data?.to || '',
+        contractAddress: data?.contractAddress || '',
+        blockHash: data?.blockHash || '0x',
+        logIndex: data?.logIndex !== undefined ? data.logIndex : '0',
+      };
+  }
+  
   // Use deterministic Signal ID from metadata/schema (keccak256 canonical payload)
   const signalId = generateSignalId({ type, data, evidence, version: SIGNAL_VERSIONS[type] || "1.0.0" }, provenance);
   return {
