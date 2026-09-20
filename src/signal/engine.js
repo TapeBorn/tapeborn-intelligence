@@ -635,17 +635,48 @@ async function scanBlocks(fromBlock, toBlock) {
             recordedHash: state.getBlockHash(chainId, i),
             currentHash: block.hash 
           });
+          // Get signals from the reorged block before invalidation
+          const reorgedSignals = state.getSignalsByBlockRange(chainId, i, i);
+          // Invalidate existing signals
           state.invalidateSignalsFromBlock(chainId, i);
         }
       }
       
-      signals.push(...detectLargeTransfers(block));
-      signals.push(...detectContractCreations(block));
-      signals.push(...detectHighFrequencyWallets(block));
-      signals.push(...detectContractInteractions(block));
-      signals.push(...detectWalletBurst(block));
-      signals.push(...detectTokenFlowAnomaly(block));
-      signals.push(...detectAddressReactivation(block));
+      const blockSignals = [];
+      blockSignals.push(...detectLargeTransfers(block));
+      blockSignals.push(...detectContractCreations(block));
+      blockSignals.push(...detectHighFrequencyWallets(block));
+      blockSignals.push(...detectContractInteractions(block));
+      blockSignals.push(...detectWalletBurst(block));
+      blockSignals.push(...detectTokenFlowAnomaly(block));
+      blockSignals.push(...detectAddressReactivation(block));
+      
+      // Record block USDC volume for chain average calculation
+      // Sum all USDC transfers in this block
+      let blockUsdcVolume = 0;
+      const txs = block.transactions || [];
+      for (const tx of txs) {
+        const value = BigInt(tx.value || "0x0");
+        blockUsdcVolume += Number(value) / (10 ** CONFIG.usdcDecimals);
+      }
+      if (blockUsdcVolume > 0 && block.hash) {
+        state.recordBlockVolume(chainId, i, blockUsdcVolume, block.hash);
+      }
+      
+      // Store signals and check for reorg replacements
+      for (const signal of blockSignals) {
+        // Check if this is a replacement for an invalidated signal
+        const existing = state.getSignal(signal.id);
+        if (existing && existing.state === 'INVALIDATED') {
+          // This is a replacement signal
+          signal.state = 'ACTIVE';
+          signal.replacementSignalId = existing.signal_id;
+          state.setReplacementSignal(existing.signal_id, signal.id);
+        }
+        state.storeSignal(signal);
+      }
+      
+      signals.push(...blockSignals);
       scanned++;
     } catch (e) {
       logger.error(`[Engine] Error scanning block ${i}`, { error: e.message });

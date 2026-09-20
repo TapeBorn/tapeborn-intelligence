@@ -61,6 +61,41 @@ class SignalState {
         recorded_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_block_hashes_chain ON block_hashes(chain_id);
+
+      CREATE TABLE IF NOT EXISTS block_volumes (
+        chain_id INTEGER NOT NULL,
+        block_number INTEGER NOT NULL,
+        usdc_volume REAL NOT NULL,
+        block_hash TEXT NOT NULL,
+        recorded_at INTEGER NOT NULL,
+        PRIMARY KEY (chain_id, block_number)
+      );
+      CREATE INDEX IF NOT EXISTS idx_block_volumes_chain ON block_volumes(chain_id);
+
+      CREATE TABLE IF NOT EXISTS signals (
+        signal_id TEXT PRIMARY KEY,
+        signal_type TEXT NOT NULL,
+        chain_id INTEGER NOT NULL,
+        block_number INTEGER NOT NULL,
+        block_hash TEXT NOT NULL,
+        transaction_hash TEXT,
+        provenance TEXT NOT NULL,
+        signal_data TEXT NOT NULL,
+        evidence TEXT NOT NULL,
+        confidence REAL NOT NULL,
+        version TEXT NOT NULL,
+        quality_status TEXT NOT NULL,
+        quality_missing TEXT,
+        state TEXT NOT NULL DEFAULT 'ACTIVE',
+        invalidated_reason TEXT,
+        invalidated_at INTEGER,
+        replacement_signal_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_signals_chain_block ON signals(chain_id, block_number);
+      CREATE INDEX IF NOT EXISTS idx_signals_state ON signals(state);
+      CREATE INDEX IF NOT EXISTS idx_signals_type ON signals(signal_type);
     `);
   }
 
@@ -163,9 +198,10 @@ class SignalState {
 
   // Invalidate signals from reorged block range
   invalidateSignalsFromBlock(chainId, fromBlock) {
-    // This would require signal storage table - for now just log
-    // Full implementation would need signal storage table
-    logger.warn('[State] Reorg detected, signals from block', { fromBlock });
+    const signals = this.getSignalsByBlockRange(chainId, fromBlock, 999999999);
+    for (const signal of signals) {
+      this.invalidateSignal(signal.signal_id, `REORG: block ${signal.block_number} replaced`);
+    }
     // Could delete address_last_seen records from reorged blocks
     this.db.prepare(`
       DELETE FROM address_last_seen 
@@ -173,52 +209,322 @@ class SignalState {
     `).run(fromBlock, chainId);
   }
 
-  // Chain average volume operations
-  getChainAverageVolume(chainId) {
-    const row = this.db.prepare(
-      'SELECT average_volume_usdc, window_blocks, last_updated_block FROM chain_average_volume WHERE chain_id = ?'
-    ).get(chainId);
+  // Signal persistence methods
+  storeSignal(signal) {
+    const now = Date.now();
+    const existing = this.getSignal(signal.id);
     
-    if (!row) return { averageVolumeUsdc: 0, windowBlocks: 0, lastUpdatedBlock: 0 };
+    // Build provenance from the signal data (same as createSignal does)
+    let provenance;
+    switch (signal.type) {
+      case 'large_transfer':
+      case 'token_flow_anomaly':
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || '0x',
+          from: signal.data?.from || signal.evidence?.from || '0x',
+          to: signal.data?.to || '',
+          contractAddress: signal.data?.contractAddress || '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: signal.data?.logIndex !== undefined ? signal.data.logIndex : '0',
+        };
+        break;
+      case 'contract_creation':
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || '0x',
+          from: signal.data?.from || signal.evidence?.from || '0x',
+          to: '',
+          contractAddress: '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: signal.data?.logIndex !== undefined ? signal.data.logIndex : '0',
+        };
+        break;
+      case 'high_frequency_wallet':
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: null,
+          from: signal.data?.address || signal.data?.sender || '0x',
+          to: '',
+          contractAddress: '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: '0',
+        };
+        break;
+      case 'contract_interaction':
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || '0x',
+          from: signal.data?.from || signal.evidence?.from || '0x',
+          to: signal.data?.contractAddress || signal.data?.to || '',
+          contractAddress: signal.data?.contractAddress || '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: signal.data?.logIndex !== undefined ? signal.data.logIndex : '0',
+        };
+        break;
+      case 'wallet_burst':
+        provenance = {
+          block: signal.data?.firstBlock || signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: null,
+          from: signal.data?.sender || '0x',
+          to: '',
+          contractAddress: '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: '0',
+        };
+        break;
+      case 'address_reactivation':
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || '0x',
+          from: signal.data?.from || '0x',
+          to: '',
+          contractAddress: '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: signal.data?.logIndex !== undefined ? signal.data.logIndex : '0',
+        };
+        break;
+      default:
+        provenance = {
+          block: signal.data?.blockNumber || signal.data?.block || '0',
+          sourceTransaction: signal.evidence?.txHash || signal.data?.txHash || '0x',
+          from: signal.data?.from || signal.evidence?.from || '0x',
+          to: signal.data?.to || '',
+          contractAddress: signal.data?.contractAddress || '',
+          blockHash: signal.data?.blockHash || '0x',
+          logIndex: signal.data?.logIndex !== undefined ? signal.data.logIndex : '0',
+        };
+    }
+    
+    const provenanceJson = JSON.stringify(provenance);
+    const signalDataJson = JSON.stringify(signal.data);
+    const evidenceJson = JSON.stringify(signal.evidence);
+    const chainId = provenance.chainId || signal.data?.chainId || 5042002;
+    
+    if (existing) {
+      // Update existing signal
+      this.db.prepare(`
+        UPDATE signals SET
+          provenance = ?,
+          signal_data = ?,
+          evidence = ?,
+          confidence = ?,
+          version = ?,
+          quality_status = ?,
+          quality_missing = ?,
+          state = ?,
+          invalidated_reason = ?,
+          invalidated_at = ?,
+          replacement_signal_id = ?,
+          updated_at = ?
+        WHERE signal_id = ?
+      `).run(
+        provenanceJson,
+        signalDataJson,
+        evidenceJson,
+        signal.confidence,
+        signal.version,
+        signal.quality?.status || 'UNKNOWN',
+        signal.quality?.missing ? JSON.stringify(signal.quality.missing) : null,
+        signal.state || 'ACTIVE',
+        signal.invalidatedReason || null,
+        signal.invalidatedAt || null,
+        signal.replacementSignalId || null,
+        Date.now(),
+        signal.id
+      );
+    } else {
+      // Insert new signal
+      this.db.prepare(`
+        INSERT INTO signals (
+          signal_id, signal_type, chain_id, block_number, block_hash,
+          transaction_hash, provenance, signal_data, evidence,
+          confidence, version, quality_status, quality_missing,
+          state, invalidated_reason, invalidated_at, replacement_signal_id,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        signal.id,
+        signal.type,
+        chainId,
+        signal.data?.blockNumber || signal.data?.block || 0,
+        provenance.blockHash || '0x',
+        provenance.sourceTransaction || null,
+        provenanceJson,
+        signalDataJson,
+        evidenceJson,
+        signal.confidence,
+        signal.version,
+        signal.quality?.status || 'UNKNOWN',
+        signal.quality?.missing ? JSON.stringify(signal.quality.missing) : null,
+        signal.state || 'ACTIVE',
+        signal.invalidatedReason || null,
+        signal.invalidatedAt || null,
+        signal.replacementSignalId || null,
+        Date.now(),
+        Date.now()
+      );
+    }
+  }
+
+  getSignal(signalId) {
+    const row = this.db.prepare('SELECT * FROM signals WHERE signal_id = ?').get(signalId);
+    if (!row) return null;
     return {
-      averageVolumeUsdc: row.average_volume_usdc,
-      windowBlocks: row.window_blocks,
-      lastUpdatedBlock: row.last_updated_block
+      signal_id: row.signal_id,
+      type: row.signal_type,
+      chainId: row.chain_id,
+      blockNumber: row.block_number,
+      blockHash: row.block_hash,
+      data: JSON.parse(row.signal_data),
+      evidence: JSON.parse(row.evidence),
+      provenance: JSON.parse(row.provenance),
+      confidence: row.confidence,
+      version: row.version,
+      quality: {
+        status: row.quality_status,
+        missing: row.quality_missing ? JSON.parse(row.quality_missing) : undefined
+      },
+      state: row.state,
+      invalidatedReason: row.invalidated_reason,
+      invalidatedAt: row.invalidated_at,
+      replacementSignalId: row.replacement_signal_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
     };
   }
 
-  setChainAverageVolume(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock) {
+  getSignalsByBlockRange(chainId, fromBlock, toBlock) {
+    return this.db.prepare(
+      'SELECT * FROM signals WHERE chain_id = ? AND block_number BETWEEN ? AND ? ORDER BY block_number'
+    ).all(chainId, fromBlock, toBlock).map(row => ({
+      signal_id: row.signal_id,
+      type: row.signal_type,
+      chainId: row.chain_id,
+      blockNumber: row.block_number,
+      blockHash: row.block_hash,
+      data: JSON.parse(row.signal_data),
+      evidence: JSON.parse(row.evidence),
+      provenance: JSON.parse(row.provenance),
+      confidence: row.confidence,
+      version: row.version,
+      quality: {
+        status: row.quality_status,
+        missing: row.quality_missing ? JSON.parse(row.quality_missing) : undefined
+      },
+      state: row.state,
+      invalidatedReason: row.invalidated_reason,
+      invalidatedAt: row.invalidated_at,
+      replacementSignalId: row.replacement_signal_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+  }
+
+  invalidateSignal(signalId, reason) {
+    const now = Date.now();
     this.db.prepare(`
-      INSERT INTO chain_average_volume (chain_id, average_volume_usdc, window_blocks, last_updated_block, updated_at)
+      UPDATE signals SET
+        state = 'INVALIDATED',
+        invalidated_reason = ?,
+        invalidated_at = ?,
+        updated_at = ?
+      WHERE signal_id = ?
+    `).run(reason, Date.now(), Date.now(), signalId);
+  }
+
+  setReplacementSignal(originalSignalId, replacementSignalId) {
+    const now = Date.now();
+    this.db.prepare(`
+      UPDATE signals SET
+        state = 'SUPERSEDED',
+        replacement_signal_id = ?,
+        updated_at = ?
+      WHERE signal_id = ?
+    `).run(replacementSignalId, now, originalSignalId);
+  }
+
+  getSignalsByState(state) {
+    return this.db.prepare(
+      'SELECT * FROM signals WHERE state = ? ORDER BY created_at DESC'
+    ).all(state).map(row => ({
+      signal_id: row.signal_id,
+      type: row.signal_type,
+      chainId: row.chain_id,
+      blockNumber: row.block_number,
+      blockHash: row.block_hash,
+      data: JSON.parse(row.signal_data),
+      evidence: JSON.parse(row.evidence),
+      provenance: JSON.parse(row.provenance),
+      confidence: row.confidence,
+      version: row.version,
+      quality: {
+        status: row.quality_status,
+        missing: row.quality_missing ? JSON.parse(row.quality_missing) : undefined
+      },
+      state: row.state,
+      invalidatedReason: row.invalidated_reason,
+      invalidatedAt: row.invalidated_at,
+      replacementSignalId: row.replacement_signal_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+  }
+
+  // Chain average volume - real rolling 100-block average
+  // Per signal-spec.yaml: rolling 100-block window for chain average volume
+  // This should be called after scanning each block to keep the average current
+
+  // Persist per-block USDC volume for rolling average calculation
+  recordBlockVolume(chainId, blockNumber, usdcVolume, blockHash) {
+    this.db.prepare(`
+      INSERT INTO block_volumes (chain_id, block_number, usdc_volume, block_hash, recorded_at)
       VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(chain_id) DO UPDATE SET
-        average_volume_usdc = excluded.average_volume_usdc,
-        window_blocks = excluded.window_blocks,
-        last_updated_block = excluded.last_updated_block,
-        updated_at = excluded.updated_at
-    `).run(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock, Date.now());
+      ON CONFLICT(block_number, chain_id) DO UPDATE SET
+        usdc_volume = excluded.usdc_volume,
+        block_hash = excluded.block_hash,
+        recorded_at = excluded.recorded_at
+    `).run(chainId, blockNumber, usdcVolume, blockHash, Date.now());
+  }
+
+  getBlockVolume(chainId, blockNumber) {
+    const row = this.db.prepare(
+      'SELECT usdc_volume FROM block_volumes WHERE chain_id = ? AND block_number = ?'
+    ).get(chainId, blockNumber);
+    return row ? row.usdc_volume : 0;
   }
 
   // Calculate and update rolling 100-block average volume
-  // This should be called after each block is scanned
-  // Per signal-spec.yaml: rolling 100-block window for chain average volume
+  // This computes the actual average from persisted block volumes
   updateChainAverageVolume(chainId, currentBlockNumber, usdcDivisor) {
     const windowBlocks = 100; // Per signal-spec.yaml
     const fromBlock = Math.max(1, currentBlockNumber - windowBlocks + 1);
     const toBlock = currentBlockNumber;
     
-    // This method computes the average USDC volume over the last 100 blocks
-    // Requires: transaction data for the window blocks
-    // For now, this is a stub - full implementation would need:
-    // 1. Access to transaction data for the window blocks (stored or re-queried)
-    // 2. Sum USDC transfer values in the window
-    // 3. Compute average per block
-    // 3. Update the cached average
+    // Sum USDC volumes from the last 100 blocks
+    const rows = this.db.prepare(
+      'SELECT SUM(usdc_volume) as total_volume, COUNT(*) as block_count FROM block_volumes WHERE chain_id = ? AND block_number BETWEEN ? AND ?'
+    ).get(chainId, fromBlock, toBlock);
     
-    // Placeholder: return current cached average
-    const current = this.getChainAverageVolume(chainId);
-    return current.averageVolumeUsdc;
+    const totalVolume = rows?.total_volume || 0;
+    const blockCount = rows?.block_count || 0;
+    
+    if (blockCount === 0) {
+      // No history yet - return 0 to indicate empty history
+      // This will cause token_flow_anomaly to use the minimum absolute threshold
+      const current = this.getChainAverageVolume(chainId);
+      return current.averageVolumeUsdc;
+    }
+    
+    // Average volume per block (in USDC)
+    const averageVolume = totalVolume / blockCount;
+    
+    // Update the cached average
+    this.setChainAverageVolume(chainId, averageVolume, windowBlocks, currentBlockNumber);
+    
+    return averageVolume;
   }
+
   getState(key) {
     const row = this.db.prepare('SELECT value FROM signal_state WHERE key = ?').get(key);
     if (!row) return null;
