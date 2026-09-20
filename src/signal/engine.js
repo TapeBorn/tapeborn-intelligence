@@ -657,10 +657,10 @@ async function scanBlocks(fromBlock, toBlock) {
        * Returns total USDC volume for the block
        */
       async function computeBlockUsdcVolume(block, usdcAddress, usdcDecimals) {
-        const txs = block.transactions || [];
-        let blockUsdcVolume = 0;
-  
-        for (const tx of txs) {
+              const txs = block.transactions || [];
+              let blockUsdcVolumeRaw = 0n; // Aggregate in BigInt for precision
+
+              for (const tx of txs) {
           // Skip reverted transactions
           if (tx.receipt && tx.receipt.status === '0x0') {
             continue;
@@ -708,15 +708,17 @@ async function scanBlocks(fromBlock, toBlock) {
               }
             }
       
-            // Convert to USDC (6 decimals)
-            const divisor = 10n ** BigInt(usdcDecimals);
-            const valueUsdc = Number(amount) / divisor;
-            blockUsdcVolume += valueUsdc;
-          }
-        }
+            // Convert to USDC (6 decimals) - aggregate in BigInt for precision
+                        const divisor = 10n ** BigInt(usdcDecimals);
+                        const valueUsdcRaw = amount; // Keep as BigInt
+                        blockUsdcVolumeRaw += valueUsdcRaw; // Aggregate in BigInt
+                      }
+                    }
+                  }
   
-        return blockUsdcVolume;
-      }
+                  // Convert to USDC once at the end (after aggregating all amounts in BigInt)
+                  const finalDivisor = 10n ** BigInt(usdcDecimals);
+                  return Number(blockUsdcVolumeRaw) / Number(finalDivisor);
       
       // Record block USDC volume for chain average calculation
       const blockUsdcVolume = await computeBlockUsdcVolume(block, CONFIG.usdcAddress, CONFIG.usdcDecimals);
