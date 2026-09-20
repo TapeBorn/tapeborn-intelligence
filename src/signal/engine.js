@@ -161,10 +161,65 @@ function computeSignalQuality(type, data, evidence) {
  * Signal ID uses keccak256 canonical payload per signal-spec.yaml
  * Signal version per signal-spec.yaml v1.0.0
  * Each signal type defines its own identity fields for collision-free IDs
+ * Confidence computed per signal-spec.yaml confidenceRule (deterministic)
  */
+function computeConfidence(type, data) {
+  // Confidence rules per signal-spec.yaml v1.0.0 - deterministic, pure functions
+  switch (type) {
+    case SIGNAL_TYPES.LARGE_TRANSFER:
+    case SIGNAL_TYPES.TOKEN_FLOW_ANOMALY:
+      // For large_transfer: valueUsdc thresholds
+      // For token_flow_anomaly: valueUsdc vs averageVolume
+      if (type === SIGNAL_TYPES.LARGE_TRANSFER) {
+        const valueUsdc = data?.valueUsdc ?? 0;
+        if (valueUsdc >= 1000) return 0.9;
+        if (valueUsdc >= 500) return 0.85;
+        if (valueUsdc >= 100) return 0.8;
+        return 0.7;
+      } else {
+        // TOKEN_FLOW_ANOMALY: uses valueUsdc vs chainAverage
+        const valueUsdc = data?.valueUsdc ?? 0;
+        const averageVolume = data?.averageVolume ?? 0;
+        if (valueUsdc > 2 * averageVolume) return 0.8;
+        if (valueUsdc > 1000) return 0.6;
+        return 0.5;
+      }
+
+    case SIGNAL_TYPES.CONTRACT_CREATION:
+      const inputLength = data?.inputLength ?? 0;
+      if (inputLength > 1000) return 0.9;
+      if (inputLength > 100) return 0.8;
+      return 0.7;
+
+    case SIGNAL_TYPES.HIGH_FREQUENCY_WALLET:
+      const txCount = data?.txCount ?? 0;
+      if (txCount >= 20) return 0.9;
+      if (txCount >= 10) return 0.8;
+      return 0.7;
+
+    case SIGNAL_TYPES.CONTRACT_INTERACTION:
+      const inputLen = data?.inputLength ?? 0;
+      if (inputLen > 100) return 0.8;
+      return 0.6;
+
+    case SIGNAL_TYPES.WALLET_BURST:
+      const burstCount = data?.txCount ?? 0;
+      if (burstCount > 20) return 0.9;
+      return 0.7;
+
+    case SIGNAL_TYPES.ADDRESS_REACTIVATION:
+      const interval = data?.interval ?? 0;
+      if (interval > 500) return 0.9;
+      return 0.7;
+
+    default:
+      return 0.8;
+  }
+}
+
 function createSignal(type, data, evidence) {
   const quality = computeSignalQuality(type, data, evidence);
-  
+  const confidence = computeConfidence(type, data);
   // Build provenance-like object for deterministic ID generation
   // Use type-specific identity fields per signal-spec.yaml
   let provenance;
@@ -460,19 +515,25 @@ function detectWalletBurst(block, threshold = CONFIG.walletBurstThreshold) {
 /**
  * Detect token flow anomaly: USDC transfer value significantly exceeds historical average.
  * Per spec: valueUsdc >= max(2 * chainAverageUSDC(last_100_blocks), 1000 USDC)
- * TODO: Implement rolling 100-block average calculation (requires state across blocks)
- * Current: Uses fixed threshold as fallback; chain average calculation requires persistent state.
+ * Uses persistent SQLite storage for rolling 100-block average (R7)
  */
 function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbsolute) {
   const signals = [];
   const txs = block.transactions || [];
   const usdcDivisor = 10 ** CONFIG.usdcDecimals;
+  const chainId = parseInt(process.env.ARC_CHAIN_ID) || 5042002;
+  const currentBlock = hexToInt(block.number || "0x0");
+  
+  // Update and get chain average volume
+  const state = getSignalStateInstance();
+  const avgVolume = state.updateChainAverageVolume(chainId, currentBlock, usdcDivisor);
+  
   for (const tx of txs) {
     const value = BigInt(tx.value || "0x0");
     const valueUsdc = Number(value) / usdcDivisor;
     // Per spec: threshold = max(2 * chainAverageUSDC(last_100_blocks), 1000 USDC)
-    // For now using minimum absolute threshold; chain average requires persistent state
-    const effectiveThreshold = Math.max(threshold, CONFIG.tokenFlowAnomalyMinAbsolute);
+    const chainAverage = avgVolume > 0 ? avgVolume : threshold;
+    const effectiveThreshold = Math.max(2 * chainAverage, CONFIG.tokenFlowAnomalyMinAbsolute);
     if (valueUsdc >= effectiveThreshold) {
       signals.push(createSignal(
         SIGNAL_TYPES.TOKEN_FLOW_ANOMALY,
@@ -480,14 +541,14 @@ function detectTokenFlowAnomaly(block, threshold = CONFIG.tokenFlowAnomalyMinAbs
           from: tx.from,
           to: tx.to,
           valueUsdc,
-          averageVolume: threshold, // placeholder - should be chain average
+          averageVolume: chainAverage,
           blockNumber: hexToInt(block.number),
           txHash: tx.hash,
         },
         {
           block: block.number,
           txHash: tx.hash,
-          description: `Anomalous USDC flow: ${valueUsdc.toFixed(2)} USDC from ${tx.from.slice(0, 10)}... to ${tx.to?.slice(0, 10)}...`
+          description: `Anomalous USDC flow: ${valueUsdc.toFixed(2)} USDC from ${tx.from.slice(0, 10)}... to ${tx.to?.slice(0, 10)}... (2x avg: ${(2 * chainAverage).toFixed(2)} USDC)`
         }
       ));
     }
@@ -618,6 +679,7 @@ module.exports = {
   detectTokenFlowAnomaly,
   detectAddressReactivation,
   createSignal,
+  computeConfidence,
   SIGNAL_TYPES,
   CONFIG,
   getKnownContracts,

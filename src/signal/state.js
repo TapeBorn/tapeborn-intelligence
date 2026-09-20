@@ -199,7 +199,26 @@ class SignalState {
     `).run(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock, Date.now());
   }
 
-  // Generic key-value storage for other signal state
+  // Calculate and update rolling 100-block average volume
+  // This should be called after each block is scanned
+  // Per signal-spec.yaml: rolling 100-block window for chain average volume
+  updateChainAverageVolume(chainId, currentBlockNumber, usdcDivisor) {
+    const windowBlocks = 100; // Per signal-spec.yaml
+    const fromBlock = Math.max(1, currentBlockNumber - windowBlocks + 1);
+    const toBlock = currentBlockNumber;
+    
+    // This method computes the average USDC volume over the last 100 blocks
+    // Requires: transaction data for the window blocks
+    // For now, this is a stub - full implementation would need:
+    // 1. Access to transaction data for the window blocks (stored or re-queried)
+    // 2. Sum USDC transfer values in the window
+    // 3. Compute average per block
+    // 3. Update the cached average
+    
+    // Placeholder: return current cached average
+    const current = this.getChainAverageVolume(chainId);
+    return current.averageVolumeUsdc;
+  }
   getState(key) {
     const row = this.db.prepare('SELECT value FROM signal_state WHERE key = ?').get(key);
     if (!row) return null;
