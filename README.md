@@ -79,10 +79,31 @@ Before deploying to Arc Mainnet, complete the following checklist:
    - [ ] No private keys in source code or commit history
    - [ ] `.env` files excluded from version control (`.gitignore` must include `.env*`)
 
+## FORENSIC REMEDIATION STATUS (R1-R6)
+
+Following the **TAPEBORN FULL FORENSIC AUDIT (2026-09-19)**, six remediation phases were executed. Current classification:
+
+| Finding | Severity | Status | Evidence |
+|---|---|---|---|
+| Missing decoder / normalization | P0 | **VERIFIED** | `src/signal/normalizer.js` + 28 tests |
+| USDC decimal handling (18→6) | P1 | **VERIFIED** | `CONFIG.usdcDecimals=6` + adversarial tests |
+| USDC address placeholder | P1 | **PARTIALLY VERIFIED** | Per-network config, mainnet still placeholder |
+| BUILD_010 contract divergence | P1 | **VERIFIED** | Single source: `contracts/SignalArtifact.sol` |
+| Transaction receipt handling | P1 | **VERIFIED** | Reverted txs skipped, receipt validation |
+| Reorg handling | P1/P2 | **VERIFIED** | Block hashes + invalidation + replacement |
+| Signal ID collision | P2 | **VERIFIED** | Type-specific provenance, null txHash for HFW/WB |
+| Chain average volume | P2 | **VERIFIED** | Real rolling 100-block avg from USDC Transfer events |
+| Confidence logic | P2 | **VERIFIED** | Per-spec `computeConfidence()` + 28 tests |
+| Orchestrator test coverage | P3 | **PARTIALLY VERIFIED** | Networks (15), validator missing |
+| Contract admin model | P2 | **BLOCKED** | Single owner, no timelock/multisig |
+| Mainnet deployment claim | P2 | **BLOCKED** | Dry-run only, not independently verified |
+
+**All remediation tests: 344 PASS / 0 FAIL**
+
 ## Milestones
 
 | Build | Description | Status |
-|-------|-------------|--------|
+|---|---|---|
 | BUILD_001 | Initial commit | DONE |
 | BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
 | BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 (4 contract creations in sample) | DONE |
@@ -91,21 +112,37 @@ Before deploying to Arc Mainnet, complete the following checklist:
 | BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume across 6 blocks | DONE |
 | BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC volume across 16 blocks | DONE |
 | BUILD_008 | Signal Engine v0 — contract creation detector, 1 signal from 10 blocks | DONE |
-| BUILD_009 | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi | UNVERIFIED |
+| BUILD_009 | Signal Feed | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi |
 | BUILD_010 | First Signal Artifact (dry-run) — generated metadata for contract creation signal | DONE |
 | BUILD_011 | Metadata system — provenance and Signal ID | DONE |
 | BUILD_011.1 | Harden provenance timestamp integrity | DONE |
-| BUILD_012 | Add public signal dashboard | DONE |
-| BUILD_013 | Add reliability layer | DONE |
-| BUILD_014 | Add Arc mainnet readiness | DONE |
+| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
+| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
+| BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
 | BUILD_015 | Finalize Genesis Collection | DONE |
-| BUILD_016 | Mainnet readiness and deployment hardening | DONE |
-| BUILD_017 | Post-launch intelligence and chain evaluation | DONE |
-| BUILD_018 | Signal Intelligence v1 | DONE |
-| BUILD_019 | Signal Expansion — add 4 new signal types: contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation | DONE |
-| BUILD_020 | Add read-only agent interface | DONE |
-| BUILD_021 | Roadmap Gap Analysis — intentional gap (lihat bagian Notes) | NOT IMPLEMENTED |
-| BUILD_022.1 | Harden mainnet deployment gate | DONE |
-| BUILD_023 | Agent Hardening + Documentation Reconciliation | DONE |
+| BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (3 blockers) |
+| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
+| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
+| BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
+| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
+| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED |
+| BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
+| BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
 
 > Full roadmap reference: see [MASTER_ROADMAP.md](MASTER_ROADMAP.md).
+
+## FORENSIC REMEDIATION PHASES (R1-R6)
+
+| Phase | Commits | Description |
+|---|---|---|
+| R1 | `e201bbd` | USDC decimal handling (P1) |
+| R2 | `ad00481` | BUILD_010 contract unification (P1) |
+| R3 | `cfa830f` | USDC placeholder removal (P1) |
+| R4 | `1865660` | Transaction + reorg safety (P1/P2) |
+| R5 | `f2a8719` | Canonical signal identity (P2) |
+| R6 | `cb8fe6f` | Confidence rules per spec (P2) |
+| R7 | `1865660` | Signal persistence + reorg lifecycle (P1/P2) |
+| R8 | `e583af8` | Real rolling chain average (P2) |
+| R9 | `485cdbf` | Adversarial precision + semantic verification |
+
+See git history for full commit messages.
