@@ -8,6 +8,10 @@ const logger = require("../orchestrator/logger");
 const { validateBlock } = require("../orchestrator/validator");
 const { generateSignalId } = require("../metadata/schema");
 const { getSignalState } = require("./state");
+const { getUsdcAddress, validateNetworkConfig } = require("../orchestrator/networks");
+
+// Validate network config at startup
+validateNetworkConfig();
 
 // Configuration per signal-spec.yaml v1.0.0
 const CONFIG = {
@@ -23,7 +27,7 @@ const CONFIG = {
   addressReactivationThreshold: 100, // blocks of inactivity
   maxBlocks: 10,
   usdcDecimals: 6, // USDC uses 6 decimals
-  usdcAddress: process.env.ARC_USDC_ADDRESS || null, // USDC contract address per network (configured via env)
+  usdcAddress: getUsdcAddress(), // USDC contract address from validated network config
 };
 
 // Signal types per signal-spec.yaml v1.0.0
