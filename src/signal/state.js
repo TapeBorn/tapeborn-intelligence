@@ -302,6 +302,20 @@ class SignalState {
     const chainId = provenance.chainId || signal.data?.chainId || 5042002;
     
     if (existing) {
+      // Update existing signal - validate state transition
+      const allowedTransitions = {
+        'ACTIVE': ['INVALIDATED'],
+        'INVALIDATED': ['SUPERSEDED'],
+        'SUPERSEDED': [] // No transitions allowed from SUPERSEDED
+      };
+      const currentState = existing.state;
+      const newState = signal.state || 'ACTIVE';
+      const allowed = allowedTransitions[currentState] || [];
+      
+      if (currentState !== newState && !allowed.includes(newState)) {
+        throw new Error(`Illegal state transition: ${currentState} -> ${newState}`);
+      }
+      
       // Update existing signal
       this.db.prepare(`
         UPDATE signals SET
@@ -423,6 +437,18 @@ class SignalState {
 
   invalidateSignal(signalId, reason) {
     const now = Date.now();
+    // Validate current state before transition
+    const current = this.getSignal(signalId);
+    if (!current) {
+      throw new Error(`Cannot invalidate non-existent signal: ${signalId}`);
+    }
+    if (current.state === 'SUPERSEDED') {
+      throw new Error(`Cannot invalidate SUPERSEDED signal: ${signalId}`);
+    }
+    if (current.state === 'INVALIDATED') {
+      // Idempotent - already invalidated
+      return;
+    }
     this.db.prepare(`
       UPDATE signals SET
         state = 'INVALIDATED',
@@ -435,6 +461,22 @@ class SignalState {
 
   setReplacementSignal(originalSignalId, replacementSignalId) {
     const now = Date.now();
+    // Validate current state before transition
+    const current = this.getSignal(originalSignalId);
+    if (!current) {
+      throw new Error(`Cannot supersede non-existent signal: ${originalSignalId}`);
+    }
+    if (current.state !== 'INVALIDATED') {
+      throw new Error(`Can only supersede INVALIDATED signal, current state: ${current.state}`);
+    }
+    if (!replacementSignalId) {
+      throw new Error(`replacement_signal_id is required for SUPERSEDED transition`);
+    }
+    // Verify replacement signal exists
+    const replacement = this.getSignal(replacementSignalId);
+    if (!replacement) {
+      throw new Error(`Replacement signal not found: ${replacementSignalId}`);
+    }
     this.db.prepare(`
       UPDATE signals SET
         state = 'SUPERSEDED',
@@ -503,21 +545,13 @@ class SignalState {
     
     // Sum USDC volumes from the last 100 blocks
     const rows = this.db.prepare(
-      'SELECT SUM(usdc_volume) as total_volume, COUNT(*) as block_count FROM block_volumes WHERE chain_id = ? AND block_number BETWEEN ? AND ?'
+      'SELECT SUM(usdc_volume) as total_volume FROM block_volumes WHERE chain_id = ? AND block_number BETWEEN ? AND ?'
     ).get(chainId, fromBlock, toBlock);
     
     const totalVolume = rows?.total_volume || 0;
-    const blockCount = rows?.block_count || 0;
     
-    if (blockCount === 0) {
-      // No history yet - return 0 to indicate empty history
-      // This will cause token_flow_anomaly to use the minimum absolute threshold
-      const current = this.getChainAverageVolume(chainId);
-      return current.averageVolumeUsdc;
-    }
-    
-    // Average volume per block (in USDC)
-    const averageVolume = totalVolume / blockCount;
+    // Per spec: average over 100-block window (including blocks with 0 volume)
+    const averageVolume = totalVolume / windowBlocks;
     
     // Update the cached average
     this.setChainAverageVolume(chainId, averageVolume, windowBlocks, currentBlockNumber);

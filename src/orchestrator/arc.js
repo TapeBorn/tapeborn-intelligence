@@ -117,11 +117,17 @@ async function getBlockByNumber(tag = "latest", includeTx = false) {
   return block;
 }
 
+async function getTransactionReceipt(txHash) {
+  const receipt = await rpc("eth_getTransactionReceipt", [txHash]);
+  return receipt;
+}
+
 module.exports = {
   rpc,
   getChainId,
   getBlockNumber,
   getBlockByNumber,
+  getTransactionReceipt,
   hexToInt,
   hexToBig,
   DEFAULT_RPC,

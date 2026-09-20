@@ -1,5 +1,6 @@
 // tests/chain-average.test.js
 // Tests for chain average volume calculation (R7)
+// Updated for real rolling 100-block window implementation
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -47,15 +48,24 @@ test('SignalState: separate chains have separate averages', () => {
   assert.strictEqual(avgMainnet.averageVolumeUsdc, 1000);
 });
 
-test('SignalState: updateChainAverageVolume returns current cached average (stub)', () => {
+test('SignalState: updateChainAverageVolume computes real rolling average from block_volumes', () => {
   resetSignalState();
   const state = getSignalState(':memory:');
-  state.setChainAverageVolume(5042002, 750, 100, 1000);
-  const avg = state.updateChainAverageVolume(5042002, 1001, 1000000);
-  assert.strictEqual(avg, 750);
+  
+  // Record some block volumes
+  state.recordBlockVolume(5042002, 100, 500, '0x' + 'a'.repeat(64));
+  state.recordBlockVolume(5042002, 101, 700, '0x' + 'b'.repeat(64));
+  
+  // Average over 100-block window = (500 + 700) / 100 = 12
+  const avg = state.updateChainAverageVolume(5042002, 101, 10**6);
+  assert.strictEqual(avg, 12);
+  
+  // Verify cached average was updated
+  const cached = state.getChainAverageVolume(5042002);
+  assert.strictEqual(cached.averageVolumeUsdc, 12);
 });
 
-test('SignalState: updateChainAverageVolume returns 0 when no cached average', () => {
+test('SignalState: updateChainAverageVolume returns 0 when no block volumes recorded', () => {
   resetSignalState();
   const state = getSignalState(':memory:');
   const avg = state.updateChainAverageVolume(5042002, 1001, 1000000);
@@ -65,12 +75,13 @@ test('SignalState: updateChainAverageVolume returns 0 when no cached average', (
 test('SignalState: different chains have independent updateChainAverageVolume', () => {
   resetSignalState();
   const state = getSignalState(':memory:');
-  state.setChainAverageVolume(5042002, 500, 100, 1000);
-  state.setChainAverageVolume(5042, 1000, 100, 2000);
+  state.recordBlockVolume(5042002, 100, 500, '0x' + 'a'.repeat(64));
+  state.recordBlockVolume(5042, 200, 1000, '0x' + 'b'.repeat(64));
   
-  const avg1 = state.updateChainAverageVolume(5042002, 1001, 1000000);
-  const avg2 = state.updateChainAverageVolume(5042, 2001, 1000000);
+  const avg1 = state.updateChainAverageVolume(5042002, 100, 1000000);
+  const avg2 = state.updateChainAverageVolume(5042, 200, 1000000);
   
-  assert.strictEqual(avg1, 500);
-  assert.strictEqual(avg2, 1000);
+  // 500 / 100 = 5, 1000 / 100 = 10
+  assert.strictEqual(avg1, 5);
+  assert.strictEqual(avg2, 10);
 });

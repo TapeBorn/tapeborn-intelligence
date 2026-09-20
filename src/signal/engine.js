@@ -3,7 +3,7 @@
 // Enhanced with validation and logging (BUILD_013).
 // Signal definitions per signal-spec.yaml v1.0.0 (R2 frozen).
 
-const { getBlockByNumber, getBlockNumber, hexToInt } = require("../orchestrator/arc");
+const { getBlockByNumber, getBlockNumber, getTransactionReceipt, hexToInt } = require("../orchestrator/arc");
 const logger = require("../orchestrator/logger");
 const { validateBlock } = require("../orchestrator/validator");
 const { generateSignalId } = require("../metadata/schema");
@@ -651,14 +651,75 @@ async function scanBlocks(fromBlock, toBlock) {
       blockSignals.push(...detectTokenFlowAnomaly(block));
       blockSignals.push(...detectAddressReactivation(block));
       
-      // Record block USDC volume for chain average calculation
-      // Sum all USDC transfers in this block
-      let blockUsdcVolume = 0;
-      const txs = block.transactions || [];
-      for (const tx of txs) {
-        const value = BigInt(tx.value || "0x0");
-        blockUsdcVolume += Number(value) / (10 ** CONFIG.usdcDecimals);
+      /**
+       * Compute USDC transfer volume from transaction receipts
+       * Only counts successful transactions with USDC Transfer events
+       * Returns total USDC volume for the block
+       */
+      async function computeBlockUsdcVolume(block, usdcAddress, usdcDecimals) {
+        const txs = block.transactions || [];
+        let blockUsdcVolume = 0;
+  
+        for (const tx of txs) {
+          // Skip reverted transactions
+          if (tx.receipt && tx.receipt.status === '0x0') {
+            continue;
+          }
+    
+          // Get receipt if not present
+          let receipt = tx.receipt;
+          if (!receipt) {
+            try {
+              receipt = await getTransactionReceipt(tx.hash);
+            } catch (e) {
+              logger.warn(`[Engine] Failed to get receipt for ${tx.hash}`, { error: e.message });
+              continue;
+            }
+          }
+    
+          // Skip if receipt indicates revert
+          if (receipt && receipt.status === '0x0') {
+            continue;
+          }
+    
+          // Process logs for USDC Transfer events
+          const logs = receipt.logs || [];
+          for (const log of logs) {
+            // Check if log is from USDC contract
+            const logAddress = log.address?.toLowerCase();
+            if (logAddress !== usdcAddress.toLowerCase()) {
+              continue;
+            }
+      
+            // Check if it's a Transfer event (topic[0] = Transfer signature)
+            const topics = log.topics || [];
+            if (topics.length < 3) continue;
+            if (topics[0] !== '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef') {
+              continue;
+            }
+      
+            // Decode amount from log data
+            let amount = 0n;
+            if (log.data && log.data !== '0x') {
+              try {
+                amount = BigInt(log.data);
+              } catch (_) {
+                continue;
+              }
+            }
+      
+            // Convert to USDC (6 decimals)
+            const divisor = 10n ** BigInt(usdcDecimals);
+            const valueUsdc = Number(amount) / divisor;
+            blockUsdcVolume += valueUsdc;
+          }
+        }
+  
+        return blockUsdcVolume;
       }
+      
+      // Record block USDC volume for chain average calculation
+      const blockUsdcVolume = await computeBlockUsdcVolume(block, CONFIG.usdcAddress, CONFIG.usdcDecimals);
       if (blockUsdcVolume > 0 && block.hash) {
         state.recordBlockVolume(chainId, i, blockUsdcVolume, block.hash);
       }
