@@ -6,6 +6,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const pathModule = require('path');
+const logger = require('../orchestrator/logger');
 
 class SignalState {
   constructor(dbPath = null) {
@@ -52,6 +53,14 @@ class SignalState {
         last_updated_block INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
+      
+      CREATE TABLE IF NOT EXISTS block_hashes (
+        block_number INTEGER PRIMARY KEY,
+        block_hash TEXT NOT NULL,
+        chain_id INTEGER NOT NULL,
+        recorded_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_block_hashes_chain ON block_hashes(chain_id);
     `);
   }
 
@@ -97,6 +106,71 @@ class SignalState {
       }
     });
     tx(updates);
+  }
+
+  // Chain average volume operations
+  getChainAverageVolume(chainId) {
+    const row = this.db.prepare(
+      'SELECT average_volume_usdc, window_blocks, last_updated_block FROM chain_average_volume WHERE chain_id = ?'
+    ).get(chainId);
+    
+    if (!row) return { averageVolumeUsdc: 0, windowBlocks: 0, lastUpdatedBlock: 0 };
+    return {
+      averageVolumeUsdc: row.average_volume_usdc,
+      windowBlocks: row.window_blocks,
+      lastUpdatedBlock: row.last_updated_block
+    };
+  }
+
+  setChainAverageVolume(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock) {
+    this.db.prepare(`
+      INSERT INTO chain_average_volume (chain_id, average_volume_usdc, window_blocks, last_updated_block, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(chain_id) DO UPDATE SET
+        average_volume_usdc = excluded.average_volume_usdc,
+        window_blocks = excluded.window_blocks,
+        last_updated_block = excluded.last_updated_block,
+        updated_at = excluded.updated_at
+    `).run(chainId, averageVolumeUsdc, windowBlocks, lastUpdatedBlock, Date.now());
+  }
+
+  // Block hash tracking for reorg detection
+  recordBlockHash(chainId, blockNumber, blockHash) {
+    this.db.prepare(`
+      INSERT INTO block_hashes (block_number, block_hash, chain_id, recorded_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(block_number) DO UPDATE SET
+        block_hash = excluded.block_hash,
+        chain_id = excluded.chain_id,
+        recorded_at = excluded.recorded_at
+    `).run(blockNumber, blockHash, chainId, Date.now());
+  }
+
+  // Get recorded block hash
+  getBlockHash(chainId, blockNumber) {
+    const row = this.db.prepare(
+      'SELECT block_hash FROM block_hashes WHERE block_number = ? AND chain_id = ?'
+    ).get(blockNumber, chainId);
+    return row ? row.block_hash : null;
+  }
+
+  // Check for reorg: returns true if block hash differs from recorded
+  checkReorg(chainId, blockNumber, currentBlockHash) {
+    const recordedHash = this.getBlockHash(chainId, blockNumber);
+    if (!recordedHash) return false; // Not recorded yet, can't detect reorg
+    return recordedHash !== currentBlockHash;
+  }
+
+  // Invalidate signals from reorged block range
+  invalidateSignalsFromBlock(chainId, fromBlock) {
+    // This would require signal storage table - for now just log
+    // Full implementation would need signal storage table
+    logger.warn('[State] Reorg detected, signals from block', { fromBlock });
+    // Could delete address_last_seen records from reorged blocks
+    this.db.prepare(`
+      DELETE FROM address_last_seen 
+      WHERE last_seen_block >= ? AND chain_id = ?
+    `).run(fromBlock, chainId);
   }
 
   // Chain average volume operations

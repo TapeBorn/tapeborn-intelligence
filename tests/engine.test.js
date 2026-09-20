@@ -102,12 +102,18 @@ test('Engine: detectHighFrequencyWallets quality with missing evidence', () => {
 test('Engine: scanBlocks returns signals for a range', async () => {
   const latest = await require('../src/orchestrator/arc').getBlockNumber();
   const from = Math.max(0, latest - 5);
-  const signals = await scanBlocks(from, latest);
-  assert.ok(Array.isArray(signals), 'should return array');
+  const result = await scanBlocks(from, latest);
+  assert.ok(Array.isArray(result.signals), 'should return object with signals array');
+  assert.ok(typeof result.scanned === 'number', 'should return scanned count');
+  assert.ok(typeof result.failed === 'number', 'should return failed count');
+  assert.ok(typeof result.incomplete === 'boolean', 'should return incomplete flag');
   // Just verify it doesn't throw
 });
 
 test('Engine: scanBlocks handles invalid range gracefully', async () => {
-  const signals = await scanBlocks(1000, 999);
-  assert.ok(Array.isArray(signals) && signals.length === 0, 'should return empty array for invalid range');
+  const result = await scanBlocks(1000, 999);
+  assert.ok(Array.isArray(result.signals) && result.signals.length === 0, 'should return empty signals array for invalid range');
+  assert.strictEqual(result.incomplete, true, 'should mark as incomplete');
+  assert.strictEqual(result.scanned, 0, 'should have 0 scanned');
+  assert.strictEqual(result.failed, 0, 'should have 0 failed');
 });

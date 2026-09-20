@@ -190,12 +190,17 @@ function createSignal(type, data, evidence) {
 /**
  * Detect large transfers (USDC value > threshold)
  * Per spec: absolute threshold 50 USDC (NOT relative to chain average)
+ * Only generates signal for successful transactions (receipt.status == 1)
  */
 function detectLargeTransfers(block, threshold = CONFIG.largeTransferThreshold) {
   const signals = [];
   const txs = block.transactions || [];
   const usdcDivisor = 10 ** CONFIG.usdcDecimals;
   for (const tx of txs) {
+    // Skip reverted transactions - only generate signals from successful txs
+    if (tx.receipt && tx.receipt.status === '0x0') {
+      continue;
+    }
     const value = BigInt(tx.value || "0x0");
     const valueUsdc = Number(value) / usdcDivisor;
     if (valueUsdc >= threshold) {
@@ -446,22 +451,44 @@ function detectAddressReactivation(block, inactivityThreshold = CONFIG.addressRe
 async function scanBlocks(fromBlock, toBlock) {
   if (fromBlock > toBlock) {
     logger.warn('[Engine] Invalid block range', { fromBlock, toBlock });
-    return [];
+    return { signals: [], scanned: 0, failed: 0, incomplete: true };
   }
   const count = toBlock - fromBlock + 1;
   logger.info(`[Engine] Scanning ${count} blocks: ${fromBlock}-${toBlock}`);
   const signals = [];
+  let scanned = 0;
+  let failed = 0;
+  const chainId = parseInt(process.env.ARC_CHAIN_ID) || 5042002;
+  
   for (let i = fromBlock; i <= toBlock; i++) {
     try {
       const block = await getBlockByNumber("0x" + i.toString(16), true);
       if (!block) {
         logger.warn(`[Engine] Block ${i} not found, skipping`);
+        failed++;
         continue;
       }
       if (!validateBlock(block, `block:${i}`)) {
         logger.warn(`[Engine] Block ${i} invalid, skipping`);
+        failed++;
         continue;
       }
+      
+      // Record block hash for reorg detection
+      const state = getSignalStateInstance();
+      if (block.hash) {
+        state.recordBlockHash(chainId, i, block.hash);
+        
+        // Check for reorg
+        if (state.checkReorg(chainId, i, block.hash)) {
+          logger.warn(`[Engine] REORG DETECTED at block ${i}`, { 
+            recordedHash: state.getBlockHash(chainId, i),
+            currentHash: block.hash 
+          });
+          state.invalidateSignalsFromBlock(chainId, i);
+        }
+      }
+      
       signals.push(...detectLargeTransfers(block));
       signals.push(...detectContractCreations(block));
       signals.push(...detectHighFrequencyWallets(block));
@@ -469,12 +496,27 @@ async function scanBlocks(fromBlock, toBlock) {
       signals.push(...detectWalletBurst(block));
       signals.push(...detectTokenFlowAnomaly(block));
       signals.push(...detectAddressReactivation(block));
+      scanned++;
     } catch (e) {
       logger.error(`[Engine] Error scanning block ${i}`, { error: e.message });
+      failed++;
     }
   }
-  logger.info(`[Engine] Found ${signals.length} signals`);
-  return signals;
+  
+  const incomplete = failed > 0;
+  if (incomplete) {
+    logger.warn(`[Engine] Scan incomplete: ${failed} blocks failed out of ${count}`);
+  }
+  logger.info(`[Engine] Found ${signals.length} signals (scanned: ${scanned}, failed: ${failed})`);
+  
+  return { 
+    signals, 
+    scanned, 
+    failed, 
+    incomplete,
+    fromBlock,
+    toBlock 
+  };
 }
 
 module.exports = {
