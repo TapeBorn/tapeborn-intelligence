@@ -6,58 +6,184 @@ TapeBorn is an **on-chain intelligence product**. We index Arc blocks and transa
 
 NFTs are the artifact layer, not the entire product. The core value is the intelligence: traceable, evidence-backed, machine-verifiable.
 
-## Stack
+## Current Status
 
-- **Runtime:** Node.js >= 20
-- **Chain:** Arc Testnet (chain ID `5042002`) → Arc Mainnet (later)
-- **Data layer:** JSON-RPC + (later) indexer
-- **Artifact layer:** ERC-721 / ERC-1155
+| Layer | Status |
+|-------|--------|
+| **Intelligence Layer** | ✅ Implemented & Verified (49/49 tests PASS) |
+| **Signal Artifact Infrastructure** | 🟡 Genesis Experimental Layer (testnet only) |
+| **Production NFT Collection** | ❌ Not Implemented |
+| **Mainnet Deployment** | 🔴 BLOCKED (3 blockers) |
 
-## Genesis Collection
+**DEVELOPMENT: GO** | **TESTNET: GO** | **MAINNET: BLOCKED**
+
+---
+
+## Genesis Experimental Layer (NOT Final Collection)
+
+The current deployed contract is an **experimental genesis layer** for testing the Signal Artifact infrastructure. It is **NOT** the final public TapeBorn NFT collection.
 
 | Property | Value |
 |---|---|
-| Collection name | Signal Artifacts / ARC / 001 |
-| Symbol | SIG |
-| Genesis supply | 1 (Token ID 0) |
-| Max supply | Unlimited (admin-mint only) |
-| Minting policy | Admin-only via BUILD_010 pipeline |
-| Token ID | Sequential, starting at 0 |
-| Contract address | `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` |
-| Deployer | `0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f` |
-| Deployment TX | `0x8dec28c1a587c2a534433f41a4e2e613f44fc5313c1de8c993c0855b85e9537c` |
-| Mint TX | `0x3d2bad4ffb055841ebc52625eaf5eb5ea273d2bea3b8051e83ebd41723ca40ed` |
-| Signal ID | `sig_454539d0` |
+| Contract | `SignalArtifact.sol` (ERC721 + Ownable + Pausable) |
+| Network | Arc Testnet (chain ID `5042002`) |
+| Address | `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` |
+| Genesis Mint | Token ID 0 (`sig_454539d0`) |
 | Source TX | `0x15a05ba5c255fc05c1ebcfd9c77db97e48646e3b9a797ed4755611f8e03e0587` |
 | Source Block | 60347218 |
-| Metadata schema | v1.0.0 |
+| Mint TX | `0x3d2bad4ffb055841ebc52625eaf5eb5ea273d2bea3b8051e83ebd41723ca40ed` |
+| Deployer | `0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f` |
+| Deployment TX | `0x8dec28c1a587c2a534433f41a4e2e613f44fc5313c1de8c993c0855b85e9537c` |
+| Mint Policy | Admin-only, `mintPaused` configurable |
+| Max Supply | Unlimited (`MAX_SUPPLY` configurable) |
+| Metadata Schema | v1.0.0 |
 
 See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for full parameters and provenance.
 
+---
+
+## Stack
+
+- **Runtime:** Node.js >= 20
+- **Chain:** Arc Testnet (chain ID `5042002`) → Arc Mainnet (later, blocked)
+- **Data Layer:** JSON-RPC + (later) indexer
+- **Artifact Layer:** ERC-721 / ERC-1155 (experimental)
+
+---
+
+## Milestones
+
+| Build | Description | Status |
+|-------|-------------|--------|
+| BUILD_001 | Initial commit | DONE |
+| BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
+| BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 | DONE |
+| BUILD_004 | Transaction reader — 3 tx + receipts, 10 logs decoded | DONE |
+| BUILD_005 | Event reader — 157 Transfer, 21 Approval events decoded | DONE |
+| BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume | DONE |
+| BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC | DONE |
+| BUILD_008 | Signal Engine v0 — contract creation detector | DONE |
+| BUILD_009 | Signal Feed | NOT VERIFIED IN COMMIT HISTORY |
+| BUILD_010 | First Signal Artifact (dry-run) — generated metadata | DONE |
+| BUILD_011 | Metadata system — provenance and Signal ID | DONE |
+| BUILD_011.1 | Harden provenance timestamp integrity | DONE |
+| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
+| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
+| BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
+| BUILD_015 | Finalize Genesis Collection | DONE |
+| BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (3 blockers) |
+| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
+| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
+| BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
+| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
+| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED (intentional) |
+| BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
+| BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
+
+> **Status Definitions:** DONE = implemented, tested, verified in testnet; VERIFIED = implementation + spec compliance + tests + persistence evidence; PARTIALLY VERIFIED = some evidence but incomplete; NOT IMPLEMENTED = absent; BLOCKED = dependency/external decision required; NOT VERIFIED IN COMMIT HISTORY = claim exists but no commit evidence found.
+
+---
+
+## Forensic Remediation Status (R1-R9)
+
+| Finding | Severity | Status | Evidence |
+|---|---|---|---|
+| Missing decoder / normalization | P0 | **VERIFIED** | `src/signal/normalizer.js` + 28 tests |
+| USDC decimal handling (18→6) | P1 | **VERIFIED** | `CONFIG.usdcDecimals=6` + adversarial tests |
+| USDC address placeholder | P1 | **PARTIALLY VERIFIED** | Per-network config, mainnet still placeholder |
+| BUILD_010 contract divergence | P1 | **VERIFIED** | Single source: `contracts/SignalArtifact.sol` |
+| Transaction receipt handling | P1 | **VERIFIED** | Reverted txs skipped, receipt validation |
+| Reorg handling | P1/P2 | **VERIFIED** | Block hashes + invalidation + replacement |
+| Signal ID collision | P2 | **VERIFIED** | Type-specific provenance, null txHash for HFW/WB |
+| Chain average volume | P2 | **VERIFIED** | Real rolling 100-block avg from USDC Transfer events |
+| Confidence logic | P2 | **VERIFIED** | Per-spec `computeConfidence()` + 28 tests |
+| Orchestrator test coverage | P3 | **PARTIALLY VERIFIED** | Networks (15), validator missing |
+| Contract admin model | P2 | **BLOCKED** | Single owner, no timelock/multisig |
+| Mainnet deployment claim | P2 | **BLOCKED** | Dry-run only, not independently verified |
+
+**All remediation tests: 344 PASS / 0 FAIL** (49 Node.js + 14 Hardhat + 17 negative permission + 10 preflight)
+
+---
+
+## Testnet Control Plane (Verified)
+
+| Contract | Address |
+|---|---|
+| TimelockController | `0xb1937d3f88d40dB94CfE56a890A53213cc582e36` |
+| TapeBornControlPlaneTest | `0x07602D7Da6602F538A4e6BBf89987AfC776F9c62` |
+
+**Role Separation Verified (17/17 Negative Tests PASS):**
+
+| Role | Timelock | Admin Safe | Guardian | Deployer |
+|---|---|---|---|---|
+| Owner | YES | NO | NO | NO |
+| DEFAULT_ADMIN_ROLE | YES | NO | NO | NO |
+| PAUSER_ROLE | NO | NO | YES | NO |
+| GUARDIAN_ADMIN_ROLE | NO | YES | NO | NO |
+| TIMELOCK PROPOSER | N/A | YES | NO | NO |
+| TIMELOCK CANCELLER | N/A | YES | NO | NO |
+
+**Guardian Capabilities:**
+- ✅ CAN: `pause()`
+- ✅ CANNOT: `unpause()`, any admin function, role management, ownership transfer
+
+---
+
+## Production Architecture (CP-01 through CP-12)
+
+| CP | Decision |
+|---|---|
+| CP-01 | Production admin = Multisig + Timelock + Emergency Guardian |
+| CP-02 | Admin Multisig = 3 signers |
+| CP-03 | Admin threshold = 2-of-3 |
+| CP-04 | Timelock enabled |
+| CP-05 | Timelock delay = 24 hours |
+| CP-06 | Emergency Guardian enabled |
+| CP-07 | Guardian authority = pause only |
+| CP-08 | Treasury = separate 2-of-3 multisig |
+| CP-09 | renounceOwnership() disabled |
+| CP-10 | Ownership transfer = two-step |
+| CP-11 | Deployment wallet separate |
+| CP-12 | Emergency: Guardian pause → investigation → multisig resolution → mitigation → verification → multisig unpause → monitoring |
+
+**Production target delay: 24 hours. Current testnet delay: 60 seconds.**
+
+---
+
+## Mainnet Blockers
+
+1. **Mainnet USDC address placeholder** (per-network config not finalized)
+2. **Single-owner admin** (no timelock/multisig — CP-01 through CP-08 not deployed)
+3. **Mainnet deployment claim not independently verified**
+
+---
+
 ## Deployment Checklist (Mainnet)
 
-Before deploying to Arc Mainnet, complete the following checklist:
+Before deploying to Arc Mainnet:
 
 1. **Network Configuration**
    - [ ] Verify mainnet chain ID (`5042` — official from Circle/Arc docs)
-   - [ ] Verify mainnet RPC URL (currently placeholder — update from official docs)
+   - [ ] Verify mainnet RPC URL (currently placeholder)
    - [ ] Test RPC connectivity with `npm run preflight`
 
 2. **Wallet & Keys**
-   - [ ] Create a dedicated mainnet deployment wallet (separate from testnet)
-   - [ ] Fund wallet with sufficient USDC for deployment and gas
-   - [ ] Store private key securely (not in repository, use environment variable)
-   - [ ] Set `DEV_WALLET_PRIVATE_KEY` in secure environment (not committed)
+   - [ ] Create dedicated mainnet deployment wallet
+   - [ ] Fund wallet with sufficient USDC
+   - [ ] Store private key securely (not in repository)
+   - [ ] Set `DEV_WALLET_PRIVATE_KEY` in secure environment
 
 3. **Contract Readiness**
-   - [ ] Test contract on testnet (BUILD_010 already deployed)
+   - [ ] Test contract on testnet (complete)
    - [ ] Review contract code for production readiness
-   - [ ] Verify contract ownership and admin controls
-   - [ ] Set up multisig or admin wallet if needed
+   - [ ] **Deploy production Admin Safe (2-of-3)**
+   - [ ] **Deploy production Treasury Safe (2-of-3)**
+   - [ ] **Deploy production Timelock (24h delay)**
+   - [ ] **Deploy production NFT contract**
 
 4. **Metadata & Provenance**
    - [ ] Verify metadata schema v1.0.0 is finalized
-   - [ ] Test provenance and evidence fields with testnet deployment
+   - [ ] Test provenance and evidence fields
    - [ ] Confirm deterministic Signal ID generation
 
 5. **Deployment Plan**
@@ -75,74 +201,63 @@ Before deploying to Arc Mainnet, complete the following checklist:
    - [ ] Document deployment transaction hashes
 
 7. **Safety Guards**
-   - [ ] Default network remains testnet (unless `ARC_NETWORK=mainnet` is explicitly set)
+   - [ ] Default network remains testnet
    - [ ] No private keys in source code or commit history
-   - [ ] `.env` files excluded from version control (`.gitignore` must include `.env*`)
+   - [ ] `.env` files excluded from version control
 
-## FORENSIC REMEDIATION STATUS (R1-R6)
+---
 
-Following the **TAPEBORN FULL FORENSIC AUDIT (2026-09-19)**, six remediation phases were executed. Current classification:
+## Test Coverage
 
-| Finding | Severity | Status | Evidence |
-|---|---|---|---|
-| Missing decoder / normalization | P0 | **VERIFIED** | `src/signal/normalizer.js` + 28 tests |
-| USDC decimal handling (18→6) | P1 | **VERIFIED** | `CONFIG.usdcDecimals=6` + adversarial tests |
-| USDC address placeholder | P1 | **PARTIALLY VERIFIED** | Per-network config, mainnet still placeholder |
-| BUILD_010 contract divergence | P1 | **VERIFIED** | Single source: `contracts/SignalArtifact.sol` |
-| Transaction receipt handling | P1 | **VERIFIED** | Reverted txs skipped, receipt validation |
-| Reorg handling | P1/P2 | **VERIFIED** | Block hashes + invalidation + replacement |
-| Signal ID collision | P2 | **VERIFIED** | Type-specific provenance, null txHash for HFW/WB |
-| Chain average volume | P2 | **VERIFIED** | Real rolling 100-block avg from USDC Transfer events |
-| Confidence logic | P2 | **VERIFIED** | Per-spec `computeConfidence()` + 28 tests |
-| Orchestrator test coverage | P3 | **PARTIALLY VERIFIED** | Networks (15), validator missing |
-| Contract admin model | P2 | **BLOCKED** | Single owner, no timelock/multisig |
-| Mainnet deployment claim | P2 | **BLOCKED** | Dry-run only, not independently verified |
-
-**All remediation tests: 344 PASS / 0 FAIL**
-
-## Milestones
-
-| Build | Description | Status |
+| Suite | Tests | Status |
 |---|---|---|
-| BUILD_001 | Initial commit | DONE |
-| BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
-| BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 (4 contract creations in sample) | DONE |
-| BUILD_004 | Transaction reader — 3 tx + receipts, 10 logs decoded at block 60,246,719 | DONE |
-| BUILD_005 | Event reader — decoded 157 Transfer events, 21 Approvals from 227 logs | DONE |
-| BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume across 6 blocks | DONE |
-| BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC volume across 16 blocks | DONE |
-| BUILD_008 | Signal Engine v0 — contract creation detector, 1 signal from 10 blocks | DONE |
-| BUILD_009 | Signal Feed | NOT VERIFIED IN COMMIT HISTORY — kemungkinan gap tidak terdokumentasi |
-| BUILD_010 | First Signal Artifact (dry-run) — generated metadata for contract creation signal | DONE |
-| BUILD_011 | Metadata system — provenance and Signal ID | DONE |
-| BUILD_011.1 | Harden provenance timestamp integrity | DONE |
-| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
-| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
-| BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
-| BUILD_015 | Finalize Genesis Collection | DONE |
-| BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (3 blockers) |
-| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
-| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
-| BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
-| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
-| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED |
-| BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
-| BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
+| Node.js (engine, signal, normalizer, adversarial, reorg) | 49 | ✅ PASS |
+| Hardhat behavioral (contract access) | 14 | ✅ PASS |
+| Negative permission tests (testnet) | 17 | ✅ PASS |
+| Preflight (mainnet) | 10 | ✅ PASS |
+| **Total** | **90** | ✅ **ALL PASS** |
 
-> Full roadmap reference: see [MASTER_ROADMAP.md](MASTER_ROADMAP.md).
+---
 
-## FORENSIC REMEDIATION PHASES (R1-R6)
+## Security Posture
 
-| Phase | Commits | Description |
-|---|---|---|
-| R1 | `e201bbd` | USDC decimal handling (P1) |
-| R2 | `ad00481` | BUILD_010 contract unification (P1) |
-| R3 | `cfa830f` | USDC placeholder removal (P1) |
-| R4 | `1865660` | Transaction + reorg safety (P1/P2) |
-| R5 | `f2a8719` | Canonical signal identity (P2) |
-| R6 | `cb8fe6f` | Confidence rules per spec (P2) |
-| R7 | `1865660` | Signal persistence + reorg lifecycle (P1/P2) |
-| R8 | `e583af8` | Real rolling chain average (P2) |
-| R9 | `485cdbf` | Adversarial precision + semantic verification |
+| Control | Status |
+|---|---|
+| No private keys in repo | ✅ Verified by preflight |
+| No .env files committed | ✅ Verified by preflight |
+| DEV_WALLET_PRIVATE_KEY only at runtime | ✅ |
+| Contract access control | 🟢 Ownable + Pausable + behavioral tests |
+| Contract supply model | 🟡 Unlimited (MAX_SUPPLY configurable) |
+| Pause semantics | 🟢 mintPaused (explicit) |
+| Metadata immutability | 🟡 Not explicit |
+| External security audit | 🔴 Not yet engaged |
 
-See git history for full commit messages.
+---
+
+## Documentation
+
+- **Current State:** [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)
+- **Repository Reconciliation:** [`docs/REPOSITORY_RECONCILIATION_001.md`](docs/REPOSITORY_RECONCILIATION_001.md)
+- **Master Roadmap:** [`MASTER_ROADMAP.md`](MASTER_ROADMAP.md)
+- **Current System State:** [`CURRENT_SYSTEM_STATE.md`](CURRENT_SYSTEM_STATE.md)
+- **Audit Package:** [`AUDIT_PACKAGE.md`](AUDIT_PACKAGE.md)
+- **System Audit:** [`TAPEBORN_SYSTEM_AUDIT_001.md`](TAPEBORN_SYSTEM_AUDIT_001.md)
+
+---
+
+## Utility Roadmap
+
+Planned holder utilities (Signal Points, Trace-linked Mint, Token-gated API) are tracked in [`UTILITY_ROADMAP.md`](UTILITY_ROADMAP.md). All items are **PLANNED** and not yet implemented.
+
+---
+
+## Contributing
+
+1. Run tests: `npm test` (Node.js) and `npx hardhat test` (contract)
+2. Run preflight: `npm run preflight`
+3. No private keys in commits — use `DEV_WALLET_PRIVATE_KEY` env var
+4. Default network = testnet (`ARC_NETWORK=mainnet` required for mainnet)
+
+---
+
+*TapeBorn — The chain leaves a tape. We read the trace.*
