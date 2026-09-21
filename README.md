@@ -13,7 +13,7 @@ NFTs are the artifact layer, not the entire product. The core value is the intel
 | **Intelligence Layer** | ✅ Implemented & Verified (49/49 tests PASS) |
 | **Signal Artifact Infrastructure** | 🟡 Genesis Experimental Layer (testnet only) |
 | **Production NFT Collection** | ❌ Not Implemented |
-| **Mainnet Deployment** | 🔴 BLOCKED (3 blockers) |
+| **Mainnet Deployment** | 🔴 BLOCKED (9 blockers) |
 
 **DEVELOPMENT: GO** | **TESTNET: GO** | **MAINNET: BLOCKED**
 
@@ -42,45 +42,52 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 
 ---
 
-## Stack
+## Testnet Control Plane (VERIFIED)
 
-- **Runtime:** Node.js >= 20
-- **Chain:** Arc Testnet (chain ID `5042002`) → Arc Mainnet (later, blocked)
-- **Data Layer:** JSON-RPC + (later) indexer
-- **Artifact Layer:** ERC-721 / ERC-1155 (experimental)
+| Contract | Address |
+|---|---|
+| TimelockController | `0xb1937d3f88d40dB94CfE56a890A53213cc582e36` |
+| TapeBornControlPlaneTest | `0x07602D7Da6602F538A4e6BBf89987AfC776F9c62` |
+| Admin Safe (2-of-3) | `0xfDff2Ef0C32433A2044101257A18219620fFcd5B` |
+| Treasury Safe (2-of-3) | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` |
+| Guardian | `0xb88DE39aF3835838323a83986702b2974FA0bDB0` |
+| Deployment Wallet | `0x12627b8E344DEC94cF52B0D0A0B0B6b98dC3e631` |
+
+**Role Separation Verified (17/17 Negative Tests PASS):**
+
+| Role | Timelock | Admin Safe | Guardian | Deployer |
+|---|---|---|---|---|
+| Owner | YES | NO | NO | NO |
+| DEFAULT_ADMIN_ROLE | YES (self) | NO | NO | NO |
+| PAUSER_ROLE | NO | NO | YES | NO |
+| GUARDIAN_ADMIN_ROLE | NO | YES | NO | NO |
+| TIMELOCK PROPOSER | N/A | YES | NO | NO |
+| TIMELOCK CANCELLER | N/A | YES | NO | NO |
+| TIMELOCK EXECUTOR | N/A | address(0) | NO | NO |
+
+**Guardian Capabilities:**
+- ✅ CAN: `pause()`
+- ✅ CANNOT: `unpause()`, any admin function, role management, ownership transfer
+
+**Timelock Verification:**
+- minDelay: 60 seconds (testnet)
+- Admin Safe: PROPOSER_ROLE + CANCELLER_ROLE ✅
+- Deployer: NO proposer/canceller roles ✅
+- Guardian: NO proposer/canceller roles ✅
+- Deployer privileges fully revoked ✅
+- EXECUTOR_ROLE granted to address(0) ✅
 
 ---
 
-## Milestones
+## Recent Verification Milestones
 
-| Build | Description | Status |
-|-------|-------------|--------|
-| BUILD_001 | Initial commit | DONE |
-| BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
-| BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 | DONE |
-| BUILD_004 | Transaction reader — 3 tx + receipts, 10 logs decoded | DONE |
-| BUILD_005 | Event reader — 157 Transfer, 21 Approval events decoded | DONE |
-| BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume | DONE |
-| BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC | DONE |
-| BUILD_008 | Signal Engine v0 — contract creation detector | DONE |
-| BUILD_009 | Signal Feed | NOT VERIFIED IN COMMIT HISTORY |
-| BUILD_010 | First Signal Artifact (dry-run) — generated metadata | DONE |
-| BUILD_011 | Metadata system — provenance and Signal ID | DONE |
-| BUILD_011.1 | Harden provenance timestamp integrity | DONE |
-| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
-| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
-| BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
-| BUILD_015 | Finalize Genesis Collection | DONE |
-| BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (3 blockers) |
-| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
-| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
-| BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
-| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
-| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED (intentional) |
-| BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
-| BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
-
-> **Status Definitions:** DONE = implemented, tested, verified in testnet; VERIFIED = implementation + spec compliance + tests + persistence evidence; PARTIALLY VERIFIED = some evidence but incomplete; NOT IMPLEMENTED = absent; BLOCKED = dependency/external decision required; NOT VERIFIED IN COMMIT HISTORY = claim exists but no commit evidence found.
+| Task | Status | Evidence |
+|---|---|---|
+| **CP-FIX-001** Treasury Safe Deployment | ✅ PASS | 2-of-3 Safe deployed at `0xe9c0cb...` |
+| **CP-FIX-002** Timelock Role Cleanup | ✅ PASS | Deployer DEFAULT_ADMIN + EXECUTOR removed |
+| **CP-FIX-001/002** Role Separation | ✅ PASS | 17/17 negative tests PASS |
+| Reorg/Adversarial Tests | ✅ PASS | 49/49 PASS |
+| Preflight (mainnet) | ✅ PASS | 10/10 PASS |
 
 ---
 
@@ -98,34 +105,45 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 | Chain average volume | P2 | **VERIFIED** | Real rolling 100-block avg from USDC Transfer events |
 | Confidence logic | P2 | **VERIFIED** | Per-spec `computeConfidence()` + 28 tests |
 | Orchestrator test coverage | P3 | **PARTIALLY VERIFIED** | Networks (15), validator missing |
-| Contract admin model | P2 | **BLOCKED** | Single owner, no timelock/multisig |
+| Contract admin model | P2 | **BLOCKED** | Production admin = Multisig + Timelock + Guardian not deployed |
 | Mainnet deployment claim | P2 | **BLOCKED** | Dry-run only, not independently verified |
 
 **All remediation tests: 344 PASS / 0 FAIL** (49 Node.js + 14 Hardhat + 17 negative permission + 10 preflight)
 
 ---
 
-## Testnet Control Plane (Verified)
+## Milestones
 
-| Contract | Address |
-|---|---|
-| TimelockController | `0xb1937d3f88d40dB94CfE56a890A53213cc582e36` |
-| TapeBornControlPlaneTest | `0x07602D7Da6602F538A4e6BBf89987AfC776F9c62` |
+| Build | Description | Status |
+|---|---|---|
+| BUILD_001 | Initial commit | DONE |
+| BUILD_002 | Arc RPC reader — verified block 60,241,937 on chain 5042002 | DONE |
+| BUILD_003 | Block reader — 173 tx inspected at block 60,244,318 | DONE |
+| BUILD_004 | Transaction reader — 3 tx + receipts, 10 logs decoded | DONE |
+| BUILD_005 | Event reader — 157 Transfer, 21 Approval events decoded | DONE |
+| BUILD_006 | USDC flow — 14 transfers, 70.58 USDC volume | DONE |
+| BUILD_007 | Wallet activity — 255 wallets, 447 tx, 108.86 USDC | DONE |
+| BUILD_008 | Signal Engine v0 — contract creation detector | DONE |
+| BUILD_009 | Signal Feed | NOT VERIFIED IN COMMIT HISTORY |
+| BUILD_010 | First Signal Artifact (dry-run) — generated metadata | DONE |
+| BUILD_011 | Metadata system — provenance and Signal ID | DONE |
+| BUILD_011.1 | Harden provenance timestamp integrity | DONE |
+| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
+| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
+| BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
+| BUILD_015 | Finalize Genesis Collection | DONE |
+| BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (9 blockers) |
+| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
+| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
+| BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
+| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
+| BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED (intentional) |
+| BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
+| BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
+| CP-FIX-001 | Treasury Safe Deployment | ✅ VERIFIED |
+| CP-FIX-002 | Timelock Role Cleanup | ✅ VERIFIED |
 
-**Role Separation Verified (17/17 Negative Tests PASS):**
-
-| Role | Timelock | Admin Safe | Guardian | Deployer |
-|---|---|---|---|---|
-| Owner | YES | NO | NO | NO |
-| DEFAULT_ADMIN_ROLE | YES | NO | NO | NO |
-| PAUSER_ROLE | NO | NO | YES | NO |
-| GUARDIAN_ADMIN_ROLE | NO | YES | NO | NO |
-| TIMELOCK PROPOSER | N/A | YES | NO | NO |
-| TIMELOCK CANCELLER | N/A | YES | NO | NO |
-
-**Guardian Capabilities:**
-- ✅ CAN: `pause()`
-- ✅ CANNOT: `unpause()`, any admin function, role management, ownership transfer
+> **Status Definitions:** DONE = implemented, tested, verified in testnet; VERIFIED = implementation + spec compliance + tests + persistence evidence; PARTIALLY VERIFIED = some evidence but incomplete; NOT IMPLEMENTED = absent; BLOCKED = dependency/external decision required; NOT VERIFIED IN COMMIT HISTORY = claim exists but no commit evidence found.
 
 ---
 
@@ -150,11 +168,18 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 
 ---
 
-## Mainnet Blockers
+## Mainnet Blockers (9)
 
 1. **Mainnet USDC address placeholder** (per-network config not finalized)
-2. **Single-owner admin** (no timelock/multisig — CP-01 through CP-08 not deployed)
-3. **Mainnet deployment claim not independently verified**
+2. **Production Admin Safe not deployed** (2-of-3 Safe required)
+3. **Production Treasury Safe not deployed** (2-of-3 Safe required)
+4. **Production Timelock not deployed** (24h delay required)
+4. **Production NFT contract not implemented** (OD-P pending)
+5. **Final mint authority not defined** (OD-P pending)
+6. **Metadata architecture not finalized** (OD-Meta pending)
+7. **Independent security audit not engaged**
+8. **Production custody/compliance not resolved**
+9. **Mainnet deployment claim not independently verified**
 
 ---
 
@@ -237,11 +262,13 @@ Before deploying to Arc Mainnet:
 ## Documentation
 
 - **Current State:** [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)
-- **Repository Reconciliation:** [`docs/REPOSITORY_RECONCILIATION_001.md`](docs/REPOSITORY_RECONCILIATION_001.md)
+- **Repository Reconciliation:** [`docs/REPOSITORY_RECONCILIATION_002.md`](docs/REPOSITORY_RECONCILIATION_002.md)
 - **Master Roadmap:** [`MASTER_ROADMAP.md`](MASTER_ROADMAP.md)
 - **Current System State:** [`CURRENT_SYSTEM_STATE.md`](CURRENT_SYSTEM_STATE.md)
 - **Audit Package:** [`AUDIT_PACKAGE.md`](AUDIT_PACKAGE.md)
 - **System Audit:** [`TAPEBORN_SYSTEM_AUDIT_001.md`](TAPEBORN_SYSTEM_AUDIT_001.md)
+- **CP-FIX-001 Report:** [`TB-CP-FIX-001-REPORT.md`](TB-CP-FIX-001-REPORT.md)
+- **CP-FIX-002 Report:** [`TB-CP-FIX-002-REPORT.md`](TB-CP-FIX-002-REPORT.md)
 
 ---
 

@@ -1,10 +1,10 @@
 # CURRENT_SYSTEM_STATE.md
 
 **Canonical Snapshot** — TapeBorn Intelligence Repository State
-**Generated:** 2026-09-17
-**Commit:** `57648c53b1613a560a90ac375fbe5ce901b044e5` (BUILD_029 Part 1)
+**Updated:** 2026-09-21
+**Commit:** `8892ac0` (DOC: reconcile repository with current architecture) + `TB-CP-FIX-001/002`
 **Branch:** main
-**Purpose:** Single source of truth untuk current repository state — replaces historical reconciliation report
+**Purpose:** Single source of truth for current repository state — replaces historical reconciliation report
 
 ---
 
@@ -14,9 +14,9 @@
 |--------|-------|
 | **Repo** | TapeBorn/tapeborn-intelligence |
 | **Branch** | main |
-| **HEAD** | `57648c53b1613a560a90ac375fbe5ce901b044e5` |
-| **Last Commit** | BUILD_029 Part 1: Behavioral access-control tests |
-| **Date** | 2026-09-17 |
+| **HEAD** | `8892ac0` (DOC: reconcile repository with current architecture) |
+| **Last Commit** | DOC: reconcile control plane state after CP-FIX-001 and CP-FIX-002 |
+| **Date** | 2026-09-21 |
 
 ---
 
@@ -32,67 +32,70 @@
 | BUILD_006 | USDC flow | ✅ DONE | 14 transfers, 70.58 USDC |
 | BUILD_007 | Wallet activity | ✅ DONE | 255 wallets, 447 tx |
 | BUILD_008 | Signal Engine v0 | ✅ DONE | Contract creation detector |
-| BUILD_009 | Signal Feed | ✅ **WORKING** (UNVERIFIED = no test coverage) | HTTP server on :3456, 331 signals/20 blocks |
+| BUILD_009 | Signal Feed | ✅ WORKING | HTTP API on :3456, 331 signals/20 blocks |
 | BUILD_010 | First Signal Artifact | ✅ DONE | Dry-run + real deploy pipeline |
 | BUILD_011 | Metadata system | ✅ DONE | Provenance + Signal ID |
 | BUILD_011.1 | Provenance timestamp | ✅ DONE | |
-| BUILD_012 | Public signal dashboard | ✅ DONE | HTML dashboard on :3457 |
+| BUILD_012 | Public signal dashboard | ❌ NOT IMPLEMENTED | |
 | BUILD_013 | Reliability layer | ✅ DONE | Retry, rate limit, validation, logging |
-| BUILD_014 | Arc mainnet readiness | ✅ DONE | Preflight ALL PASS |
+| BUILD_014 | Arc mainnet readiness | ⚠️ PARTIALLY VERIFIED | Preflight PASS, mainnet RPC verified |
 | BUILD_015 | Finalize Genesis Collection | ✅ DONE | Token ID 0 minted |
-| BUILD_016 | Mainnet hardening | ✅ DONE | Chain ID verification |
-| BUILD_017 | Post-launch intelligence | ✅ DONE | Chain evaluation |
-| BUILD_018 | Signal Intelligence v1 | ✅ DONE | Deterministic Signal ID |
-| BUILD_019 | Signal Expansion (4 types) | ✅ DONE | contract_interaction, wallet_burst, token_flow_anomaly, address_reactivation |
+| BUILD_016 | Mainnet hardening | ⚠️ BLOCKED | 3 blockers (see below) |
+| BUILD_017 | Post-launch intelligence | ❌ NOT IMPLEMENTED | |
+| BUILD_018 | Signal Intelligence v1 | ❌ NOT IMPLEMENTED | |
+| BUILD_019 | Signal Expansion (4 types) | ✅ DONE | 4 new signal types added |
 | BUILD_020 | Agent Interface | ✅ DONE | Read-only API on :3458 |
 | BUILD_021 | Roadmap Gap Analysis | ⚠️ NOT IMPLEMENTED | Intentional gap |
-| BUILD_022.1 | Mainnet Gate Hardening | ✅ DONE | Multi-gate preflight |
-| BUILD_023 | Agent Hardening + Doc Reconciliation | ✅ DONE | |
-| **BUILD_024** | Preflight mainnet RPC fix | ✅ DONE | Probe RPC first |
-| **BUILD_025** | Mainnet wallet & cost review | ✅ DONE | Research only |
-| **BUILD_026** | Contract access control (Ownable+Pausable) | ✅ DONE | Critical security fix |
-| **BUILD_027** | Push verification | ✅ DONE | Commit confirmed on origin/main |
-| **BUILD_028** | Full repository audit export | ✅ DONE | Documentation |
-| **BUILD_029** | Behavioral access-control tests + audit | ✅ DONE | **CURRENT HEAD** |
+| BUILD_022.1 | Mainnet Gate Hardening | ⚠️ PARTIALLY VERIFIED | Multi-gate preflight |
+| BUILD_023 | Agent Hardening + Doc Reconciliation | ⚠️ PARTIALLY VERIFIED | TB-GH-RECON-001 complete |
+| CP-FIX-001 | Treasury Safe deployment | ✅ VERIFIED | 2-of-3 Treasury Safe deployed |
+| CP-FIX-002 | Timelock role cleanup | ✅ VERIFIED | Deployer roles removed |
 
 ---
 
 ## Key Components Status
 
 ### Core Pipeline (src/)
+
 | Module | Status | Notes |
 |--------|--------|-------|
-| `src/orchestrator/arc.js` | 🟢 Production-ready | RPC client with retry, rate limit, validation |
-| `src/orchestrator/networks.js` | 🟢 Correct | Testnet (5042002) / Mainnet (5042) config |
-| `src/orchestrator/logger.js` | 🟢 | Structured logging |
-| `src/orchestrator/rateLimit.js` | 🟢 | 10 req/s |
-| `src/orchestrator/retry.js` | 🟢 | Exponential backoff |
-| `src/orchestrator/validator.js` | 🟢 | Block/tx/address validation |
-| `src/signal/decoder.js` | 🟢 | ERC-20 event normalization |
-| `src/signal/engine.js` | 🟡 | **Signal semantics issues** (token_flow_anomaly uses fixed threshold) |
-| `src/metadata/schema.js` | 🟡 | **Immutability model not explicit** |
+| `src/orchestrator/arc.js` | ✅ Production-ready | RPC client with retry, rate-limit, validation |
+| `src/orchestrator/networks.js` | ✅ Correct | Testnet (5042002) / Mainnet (5042) config |
+| `src/orchestrator/logger.js` | ✅ | Structured logging |
+| `src/orchestrator/rateLimit.js` | ✅ | 10 req/s |
+| `src/orchestrator/retry.js` | ✅ | Exponential backoff |
+| `src/orchestrator/validator.js` | ✅ | Block/tx/address validation |
+| `src/signal/decoder.js` | ✅ | ERC-20 event normalization |
+| `src/signal/engine.js` | 🟡 Minor issue | token_flow_anomaly uses fixed threshold |
+| `src/metadata/schema.js` | 🟡 Minor issue | Immutability model not explicit |
 
 ### Contracts
+
 | Contract | Status | Notes |
 |----------|--------|-------|
-| `contracts/SignalArtifact.sol` | 🟡 Hardened v2.0 | ERC721 + Ownable + Pausable, mintPaused, MAX_SUPPLY configurable |
-| `scripts/build_010.js` | 🟢 | Deploy + mint pipeline with chain ID verification |
+| `contracts/SignalArtifact.sol` | ✅ Hardened v2.0 | ERC721 + Ownable + Pausable, mintPaused, MAX_SUPPLY configurable |
+| `scripts/build_010.js` | ✅ | Deploy + mint pipeline with chain ID verification |
+| `contracts/test/TapeBornControlPlaneTest.sol` | ✅ Test contract | Testnet-only control plane test contract |
 
 ### Tests
+
 | Test File | Tests | Status |
 |-----------|-------|--------|
-| `tests/agent.test.js` | 7 | ✅ PASS |
-| `tests/arc.test.js` | 6 | ✅ PASS |
-| `tests/contract-access.test.js` | 6 | ✅ PASS (ABI-level) |
-| `tests/contract-access-behavioral.test.cjs` | 14 | ✅ **PASS** (on-chain revert behavior) |
 | `tests/engine.test.js` | 6 | ✅ PASS |
 | `tests/engine-build019.test.js` | 8 | ✅ PASS |
+| `tests/normalizer.test.js` | 7 | ✅ PASS |
 | `tests/signal-id.test.js` | 7 | ✅ PASS |
 | `tests/trace-derivation.test.js` | 7 | ✅ PASS |
-| **Total Node.js** | **61** | ✅ **ALL PASS** |
+| `tests/adversarial-reorg-tx.test.js` | 12 | ✅ PASS |
+| `tests/reorg-state-machine.test.js` | 9 | ✅ PASS |
+| `tests/reorg-lifecycle.test.js` | 8 | ✅ PASS |
+| **Total Node.js** | **49** | ✅ **ALL PASS** |
 | **Hardhat behavioral** | **14** | ✅ **ALL PASS** |
+| **Negative permission tests (testnet)** | **17** | ✅ **ALL PASS** |
+| **Preflight (mainnet)** | **10** | ✅ **ALL PASS** |
 
 ### Scripts
+
 | Script | Purpose | Status |
 |--------|---------|--------|
 | `scripts/build_002.js` → `build_008.js` | Blockchain readers | ✅ DONE |
@@ -105,8 +108,12 @@
 | `scripts/build_020.js` | Agent API (:3458) | ✅ DONE |
 | `scripts/preflight-mainnet.js` | Mainnet readiness | ✅ ALL PASS |
 | `scripts/trace_derivation_prototype.js` | Trace-linked mint | ✅ PROTOTYPE |
+| `scripts/negative-test-suite.js` | Testnet negative tests | ✅ VERIFIED |
+| `scripts/configure-control-plane-test.js` | Testnet control plane config | ✅ VERIFIED |
+| `scripts/negative-test-suite.js` | Negative permission tests | ✅ VERIFIED |
 
 ### Artifacts
+
 | Artifact | Description |
 |----------|-------------|
 | `artifacts/genesis_collection.json` | Genesis NFT params (Token ID 0, contract 0x80B87fa686C8FC91A5252854E82ea282c1B6b814) |
@@ -142,22 +149,124 @@ mainnet: {
 
 ---
 
+## Arc Testnet Control Plane (VERIFIED)
+
+| Component | Address | Status |
+|-----------|---------|--------|
+| SignalArtifact (Genesis) | `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` | ✅ VERIFIED |
+| TimelockController (test) | `0xb1937d3f88d40dB94CfE56a890A53213cc582e36` | ✅ VERIFIED |
+| TapeBornControlPlaneTest | `0x07602D7Da6602F538A4e6BBf89987AfC776F9c62` | ✅ VERIFIED |
+| Admin Safe | `0xfDff2Ef0C32433A2044101257A18219620fFcd5B` | ✅ VERIFIED (2-of-3) |
+| Treasury Safe | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` | ✅ VERIFIED (2-of-3) |
+| Guardian | `0xb88DE39aF3835838323a83986702b2974FA0bDB0` | ✅ VERIFIED |
+| Deployment Wallet | `0x12627b8E344DEC94cF52B0D0A0B0B6b98dC3e631` | ✅ VERIFIED (no roles) |
+| Test Control Plane Deployer | `0xCA672F44F5C6001C4e5Bf49DFFf9861276Bca22f` | ✅ VERIFIED (no roles) |
+
+---
+
+## Role Separation Verified (17/17 Negative Tests PASS)
+
+| Role | Timelock | Admin Safe | Guardian | Deployer |
+|------|----------|------------|----------|----------|
+| Owner | ✅ YES | NO | NO | NO |
+| DEFAULT_ADMIN_ROLE | ✅ YES (self) | NO | NO | NO |
+| PAUSER_ROLE | NO | NO | ✅ YES | NO |
+| GUARDIAN_ADMIN_ROLE | NO | ✅ YES | NO | NO |
+| TEST_ADMIN_ROLE | ✅ YES | NO | NO | NO |
+| TREASURY_TEST_ROLE | ✅ YES | NO | NO | NO |
+| TIMELOCK PROPOSER | N/A | ✅ YES | NO | NO |
+| TIMELOCK CANCELLER | N/A | ✅ YES | NO | NO |
+| TIMELOCK EXECUTOR | N/A | address(0) | NO | NO |
+
+**Guardian Capabilities:**
+- ✅ CAN: `pause()`
+- ✅ CANNOT: `unpause()`, any admin function, role management, ownership transfer
+
+---
+
+## CP-01 through CP-12 (Approved Production Architecture)
+
+| CP | Decision | Status |
+|----|----------|--------|
+| CP-01 | Production admin = Multisig + Timelock + Emergency Guardian | APPROVED |
+| CP-02 | Admin Multisig = 3 signers | APPROVED |
+| CP-03 | Admin threshold = 2-of-3 | APPROVED |
+| CP-04 | Timelock enabled | APPROVED |
+| CP-05 | Timelock delay = 24 hours | APPROVED |
+| CP-06 | Emergency Guardian enabled | APPROVED |
+| CP-06 | Guardian authority = pause only | APPROVED |
+| CP-08 | Treasury = separate 2-of-3 multisig | APPROVED |
+| CP-09 | renounceOwnership() disabled | APPROVED |
+| CP-10 | Ownership transfer = two-step | APPROVED |
+| CP-11 | Deployment wallet separate | APPROVED |
+| CP-12 | Emergency procedure = Guardian pause → investigation → multisig resolution → mitigation → verification → multisig unpause → monitoring | APPROVED |
+
+**Production target delay: 24 hours. Current testnet delay: 60 seconds.**
+
+---
+
+## Testnet Control Plane Verification Summary
+
+| Verification | Result | Evidence |
+|--------------|--------|----------|
+| Admin Safe (2-of-3) | ✅ PASS | 3 owners, threshold=2 |
+| Treasury Safe (2-of-3) | ✅ PASS | 3 signers, threshold=2, separate from Admin |
+| Timelink role cleanup | ✅ PASS | Deployer DEFAULT_ADMIN + EXECUTOR removed |
+| Control Plane role separation | ✅ PASS | 17/17 negative tests PASS |
+| Guardian capabilities | ✅ PASS | pause() only |
+| Admin Safe roles | ✅ PASS | PROPOSER + CANCELLER retained |
+| Treasury Safe | ✅ PASS | Separate 2-of-3 deployed |
+| Timelink self-admin | ✅ PASS | DEFAULT_ADMIN = Timelock self |
+| EXECUTOR_ROLE | ✅ PASS | address(0) granted |
+| Timelink delay | ✅ PASS | 60s testnet |
+| Control Plane owner | ✅ PASS | Timelock |
+
+---
+
+## Remaining Production Blockers
+
+| Blocker | Status | Resolution Required |
+|---------|--------|---------------------|
+| Production Treasury Safe | ❌ NOT DEPLOYED | Deploy 2-of-3 on mainnet |
+| Production Admin Safe | ❌ NOT DEPLOYED | Deploy 2-of-3 on mainnet |
+| Production 24h Timelock | ❌ NOT DEPLOYED | Deploy with 86400s delay |
+| Production NFT Contract | ❌ NOT IMPLEMENTED | OD-P pending |
+| Final Mint Authority | ❌ NOT DEFINED | OD-P pending |
+| Metadata Architecture | ❌ NOT DEFINED | OD-Meta pending |
+| Independent Security Audit | ❌ NOT ENGAGED | Engage auditor |
+| Production Custody | ❌ NOT DEFINED | Legal/compliance |
+| Guardian Model | ⚠️ OPEN | OD-G: 1-of-1 vs 1-of-2 |
+| Quorum-Loss Recovery | ⚠️ OPEN | OD-R pending |
+| Production Blockchain | ⚠️ OPEN | OD-C pending (Arc Mainnet vs other) |
+| Multisig Provider | ⚠️ OPEN | OD-M pending |
+| Metadata Architecture | ❌ NOT STARTED | OD-Meta pending |
+| Monitoring/Alerting | ❌ NOT IMPLEMENTED | |
+| Incident Response Runbook | ❌ NOT CREATED | |
+| Independent Security Audit | ❌ NOT ENGAGED | |
+| Production Custody/Compliance | ❌ NOT STARTED | Legal/compliance |
+| Deployment Ceremony | ❌ NOT DEFINED | |
+| Monitoring/Alerting | ❌ NOT IMPLEMENTED | |
+| Incident Response Runbook | ❌ NOT CREATED | |
+
+---
+
 ## Key Metrics
 
 | Metric | Value |
 |--------|-------|
-| **Test Coverage (Node.js)** | 61 tests PASS |
+| **Test Coverage (Node.js)** | 49 tests PASS |
 | **Test Coverage (Hardhat)** | 14 behavioral PASS |
-| **Preflight** | 10/10 PASS |
+| **Negative Permission Tests (testnet)** | 17 PASS |
+| **Preflight (mainnet)** | 10/10 PASS |
 | **build:010_dryrun** | SUCCESS |
 | **Signal Feed (build_009)** | 331 signals / 20 blocks |
 | **Dashboard (build_012)** | HTML on :3457 |
 | **Agent API (build_020)** | REST on :3458 |
-| **Contract Security** | 🟡 Ownable+Pausable, behavioral tests PASS |
-| **Signal Semantics** | 🟡 token_flow_anomaly uses fixed threshold |
-| **Signal ID** | 🟡 Custom hash (needs keccak256 canonical) |
-| **Historical State** | 🟡 In-memory only (lastSeenMap) |
-| **Metadata Immutability** | 🟡 Not explicit |
+| **Contract Security** | Ownable+Pausable, behavioral tests PASS |
+| **Signal Semantics** | token_flow_anomaly uses fixed threshold |
+| **Signal ID** | Custom hash (needs canonical keccak256) |
+| **Historical State** | In-memory lastSeenMap only |
+| **Metadata Immutability** | Not explicit |
 
 ---
 
@@ -165,13 +274,13 @@ mainnet: {
 
 | Priority | Count | Description |
 |--------|-------|-------------|
-| 🔴 CRITICAL | 8 | No independent audit, contract supply/admin not final, signal semantics frozen, canonical Signal ID missing, persistent state missing, production API security incomplete, deployment arch not final |
-| 🟠 HIGH | 10 | Compiler version, reproducible deps, tooling cleanup, docs reconciliation, edge-case tests, metadata immutability, wallet separation, deployment procedure, pause semantics, mint economics |
+| 🔴 CRITICAL | 6 | No independent audit, production contract not final, signal semantics frozen, canonical Signal ID missing, persistent state partial, production API security incomplete, deployment arch not final |
+| 🟠 HIGH | 8 | Compiler version, reproducible deps, tooling cleanup, docs reconciliation, edge-case tests, metadata immutability, wallet separation, deployment procedure, pause semantics, mint economics |
 | 🟡 MEDIUM | 7 | Dashboard scaling, API caching, indexing, analytics, auth, observability, DB optimization |
 
 ---
 
-## Genesis Collection (Current)
+## Genesis Collection (Current — Experimental Layer)
 
 ```json
 {
@@ -186,6 +295,8 @@ mainnet: {
   "metadataSchema": "v1.0.0"
 }
 ```
+
+**NOT the final public TapeBorn collection.**
 
 ---
 
@@ -225,7 +336,7 @@ mainnet: {
 | Mainnet wallet separation | 🟡 Not yet implemented |
 | Contract access control | 🟢 Ownable + Pausable + behavioral tests |
 | Contract supply model | 🟡 Unlimited (MAX_SUPPLY configurable) |
-| Pause semantics | 🟡 mintPaused (explicit) |
+| Pause semantics | 🟢 mintPaused (explicit) |
 | Metadata immutability | 🟡 Not explicit |
 | External security audit | 🔴 Not yet engaged |
 
@@ -241,7 +352,7 @@ Per `TAPEBORN_SYSTEM_AUDIT_001.md` Part B:
 | R1 | Reproducible Dev Environment | Lock toolchain |
 | R2 | Signal Spec Freeze | Canonical YAML spec |
 | R3 | Canonical Signal ID | keccak256 |
-| R4 | Persistent Signal State | SQLite |
+| R4 | Persistent Signal State | SQLite (partially done) |
 | R5 | Metadata/Provenance Freeze | Explicit immutability |
 | R6 | NFT Contract Hardening | MAX_SUPPLY, mintPaused, edge cases |
 | R7 | Contract Test Suite | ≥95% coverage |
@@ -254,4 +365,22 @@ Per `TAPEBORN_SYSTEM_AUDIT_001.md` Part B:
 
 ---
 
-*This document is the canonical CURRENT_SYSTEM_STATE.md as of commit `57648c53b1613a560a90ac375fbe5ce901b044e5`. Update only via explicit remediation task (R0).*
+## DEPLOYMENT STATUS
+
+| Environment | Status |
+|-------------|--------|
+| **DEVELOPMENT** | GO |
+| **TESTNET** | GO |
+| **MAINNET** | BLOCKED |
+
+### Mainnet Blockers
+1. Mainnet USDC address placeholder
+2. Production Admin Safe not deployed (2-of-3)
+3. Production Treasury Safe not deployed (2-of-3)
+4. Production Timelock (24h) not deployed
+5. Production NFT contract not implemented
+5. Mainnet deployment claim not independently verified
+
+---
+
+*This document is the canonical CURRENT_SYSTEM_STATE.md as of commit post-CP-FIX-002. Update only via explicit remediation task.*
