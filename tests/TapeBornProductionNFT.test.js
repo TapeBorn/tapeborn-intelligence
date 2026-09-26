@@ -635,7 +635,7 @@ describe("TapeBornProductionNFT", function () {
       await expect(claimAs(alice, await makeAuth(alice.address))).to.not.be.reverted;
     });
 
-    it("owner juga bisa pause langsung (onlyRole PAUSER_ROLE tidak dipenuhi owner=timelock)", async function () {
+    it("owner (Timelock) TIDAK bisa pause tanpa PAUSER_ROLE -> konsisten dgn lock baris 347", async function () {
       await expect(nft.connect(timelock).pause()).to.be.revertedWithCustomError(
         nft,
         "AccessControlUnauthorizedAccount"
