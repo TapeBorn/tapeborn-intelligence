@@ -193,6 +193,15 @@ claimed[campaignId][phaseId] <= allocationCap[campaignId][phaseId]
 
 The contract must validate:
 - campaign exists/configured
+
+GAP-G closure note:
+Campaign/phase existence is enforced implicitly by the state-machine invariant. A claim
+can succeed only when state[campaignId][phaseId] == ACTIVE; ACTIVE is reachable only
+through the owner-controlled DRAFT -> CONFIGURED -> REVIEWED -> ACTIVE transition.
+Therefore an unregistered campaign/phase cannot reach a successful claim path.
+The current guard ordering may return "Allocation exhausted" before "Phase not active"
+for an unconfigured pair (allocationCap defaults to zero); this is diagnostic only and
+does not create a security or claim-bypass path. No explicit registry is required.
 - phase exists within that campaign
 - campaign+phase is ACTIVE
 - allocation cap exists
