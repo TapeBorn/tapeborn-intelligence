@@ -60,7 +60,7 @@ contract TapeBornProductionNFT is ERC721, Ownable2Step, Pausable, EIP712, Access
     string private contractURI_; // for marketplace integration
 
     // ========== Events ==========
-    event Claim(bytes32 indexed campaignId, bytes32 indexed phaseId, address indexed claimant, uint256 tokenId);
+    event ClaimCampaignPhase(bytes32 indexed campaignId, bytes32 indexed phaseId, address indexed claimant, uint256 tokenId);
     event AllocationCapChanged(bytes32 indexed campaignId, bytes32 indexed phaseId, uint256 newCap);
     event PhaseStateChanged(bytes32 indexed campaignId, bytes32 indexed phaseId, uint8 oldState, uint8 newState);
     event SignerRotated(address indexed previousSigner, address indexed newSigner);
@@ -89,8 +89,13 @@ contract TapeBornProductionNFT is ERC721, Ownable2Step, Pausable, EIP712, Access
 
     // ========== Allocation ==========
     function setAllocationCap(bytes32 campaignId, bytes32 phaseId, uint256 cap) public onlyOwner {
-        require(state[campaignId][phaseId] != State.ACTIVE, "Cannot modify active phase");
         require(cap >= claimed[campaignId][phaseId], "Allocation below claimed");
+        require(
+            state[campaignId][phaseId] == State.DRAFT ||
+            state[campaignId][phaseId] == State.CONFIGURED ||
+            state[campaignId][phaseId] == State.REVIEWED,
+            "Allocation locked"
+        );
         allocationCap[campaignId][phaseId] = cap;
         emit AllocationCapChanged(campaignId, phaseId, cap);
     }
@@ -235,7 +240,7 @@ contract TapeBornProductionNFT is ERC721, Ownable2Step, Pausable, EIP712, Access
         _safeMint(claimant, ++_tokenIdCounter);
 
         // 7. Emit Claim
-        emit Claim(campaignId, phaseId, claimant, _tokenIdCounter);
+        emit ClaimCampaignPhase(campaignId, phaseId, claimant, _tokenIdCounter);
     }
 
     // ========== Helper: EIP-712 Domain Separator ==========

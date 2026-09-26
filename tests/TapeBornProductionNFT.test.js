@@ -318,13 +318,18 @@ describe("TapeBornProductionNFT", function () {
         "Allocation below claimed"
       );
 
-      // raise cap saat EXHAUSTED boleh (state != ACTIVE) ...
-      await nft.connect(timelock).setAllocationCap(TEAM, EARLY, 4);
-      expect(await nft.allocationCap(TEAM, EARLY)).to.equal(4n);
-      // ... tapi phase TETAP tidak bisa dipakai: EXHAUSTED->ACTIVE ditolak,
-      // jadi raise cap setelah EXHAUSTED tidak membuka ulang phase (by design).
+      // GAP-C founder ruling: allocation cap hanya mutable SEBELUM ACTIVE.
+      // EXHAUSTED bukan pre-ACTIVE -> raise cap sekarang DITOLAK.
+      await expect(
+        nft.connect(timelock).setAllocationCap(TEAM, EARLY, 4)
+      ).to.be.revertedWith("Allocation locked");
+      expect(await nft.allocationCap(TEAM, EARLY)).to.equal(3n);
+      // phase TETAP tidak bisa dipakai: EXHAUSTED->ACTIVE ditolak, dan claim
+      // ditolak lebih awal oleh cek alokasi (cap tetap 3 == claimed 3), bukan
+      // oleh cek state -> "Allocation exhausted". Cek "Phase not active" pada
+      // phase non-ACTIVE yang masih punya headroom dicakup test CLOSED.
       await expect(claimAs(mallory, await makeAuth(mallory.address))).to.be.revertedWith(
-        "Phase not active"
+        "Allocation exhausted"
       );
       await expect(
         nft.connect(timelock).setCampaignState(TEAM, EARLY, ST.ACTIVE)
@@ -335,7 +340,7 @@ describe("TapeBornProductionNFT", function () {
       await configurePhase(TEAM, EARLY, 10);
       await expect(
         nft.connect(timelock).setAllocationCap(TEAM, EARLY, 20)
-      ).to.be.revertedWith("Cannot modify active phase");
+      ).to.be.revertedWith("Allocation locked");
     });
 
     it("cap bisa diubah saat phase belum ACTIVE (CONFIGURED)", async function () {
@@ -371,7 +376,7 @@ describe("TapeBornProductionNFT", function () {
       const auth = await makeAuth(alice.address);
       const tx = await claimAs(alice, auth);
 
-      await expect(tx).to.emit(nft, "Claim").withArgs(TEAM, EARLY, alice.address, 1n);
+      await expect(tx).to.emit(nft, "ClaimCampaignPhase").withArgs(TEAM, EARLY, alice.address, 1n);
       await expect(tx).to.emit(nft, "Transfer").withArgs(ethers.ZeroAddress, alice.address, 1n);
 
       expect(await nft.ownerOf(1)).to.equal(alice.address);
@@ -854,7 +859,7 @@ describe("TapeBornProductionNFT", function () {
       await expect(
         nft.connect(carol).claim(a2.campaignId, a2.phaseId, a2.claimant, a2.quantity, a2.nonce, a2.deadline, s2)
       )
-        .to.emit(nft, "Claim")
+        .to.emit(nft, "ClaimCampaignPhase")
         .withArgs(TEAM, EARLY, carol.address, 1n);
     });
 

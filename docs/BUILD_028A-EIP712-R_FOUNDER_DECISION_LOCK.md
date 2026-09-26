@@ -245,6 +245,7 @@ Rules:
 - No arbitrary REVIEWED → DRAFT.
 - No allocation mutation while ACTIVE.
 - Allocation may be modified only before ACTIVE.
+- **GAP-C founder ruling (2026-09-26):** the bullet above is authoritative and supersedes any "non-ACTIVE" reading of the bullet before it. EXHAUSTED and CLOSED are NOT pre-ACTIVE: once a campaign/phase is ACTIVE its allocation cap is locked, and after EXHAUSTED/CLOSED it stays locked. Reopening a phase (EXHAUSTED -> ACTIVE) is not permitted. `setAllocationCap` reverts `"Allocation locked"` outside DRAFT/CONFIGURED/REVIEWED, and `"Allocation below claimed"` when the new cap is below `claimed`.
 - Pre-ACTIVE allocation changes require governance/auditable authorization.
 - Pre-ACTIVE allocation changes MUST NOT permit total supply above MAX_SUPPLY.
 - 2,522 remains distribution planning capacity, not supply.
