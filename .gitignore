@@ -144,6 +144,9 @@ vite.config.ts.timestamp-*
 artifacts/
 cache/
 artifacts/build-info/
+# Hardhat owns these (GAP-E fix); artifacts/ is reserved for tracked pipeline outputs
+artifacts-hardhat/
+cache-hardhat/
 
 # Node version
 .nvmrc

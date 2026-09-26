@@ -28,7 +28,7 @@ if (!isDryRun) {
 }
 
 // Load contract artifact from Hardhat compilation (single source of truth)
-const artifactPath = path.join(__dirname, "../artifacts/contracts/SignalArtifact.sol/SignalArtifact.json");
+const artifactPath = path.join(__dirname, "../artifacts-hardhat/contracts/SignalArtifact.sol/SignalArtifact.json");
 if (!fs.existsSync(artifactPath)) {
   console.error("ERROR: Contract artifact not found. Run 'npm run compile' first.");
   process.exit(1);

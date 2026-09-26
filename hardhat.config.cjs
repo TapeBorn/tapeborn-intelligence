@@ -4,6 +4,15 @@
 require("@nomicfoundation/hardhat-toolbox");
 
 module.exports = {
+  // GAP-E fix: Hardhat's artifact auto-cleanup deletes any file in the artifacts
+  // directory that is not a valid Hardhat artifact — which wiped the tracked
+  // pipeline outputs artifacts/build_*.json on every compile/test run.
+  // Hardhat now owns ./artifacts-hardhat only; artifacts/ is reserved for
+  // pipeline build outputs (tracked in git).
+  paths: {
+    artifacts: "./artifacts-hardhat",
+    cache: "./cache-hardhat",
+  },
   solidity: {
     version: "0.8.24",
     settings: {
