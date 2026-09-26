@@ -25,6 +25,8 @@
     "build:020": "node scripts/build_020.js",
     "test": "node --test tests/engine*.test.js tests/adversarial-engine.test.js",
     "test:hardhat": "npx hardhat --config hardhat.config.cjs test tests/contract-access-behavioral.test.cjs tests/adversarial.test.js",
+    "test:contract:nft": "npx hardhat --config hardhat.config.cjs test tests/TapeBornProductionNFT.test.js",
+    "test:contract": "npm run test:contract:nft && npm run test:hardhat",
     "preflight": "node scripts/preflight-mainnet.js",
     "compile": "npx hardhat --config hardhat.config.cjs compile"
   },
