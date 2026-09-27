@@ -1,0 +1,27 @@
+BUILD_028A-EIP712 REPORT
+- Status: COMPLETED — Documentation-only specification created.
+- File created: docs/BUILD_028A-EIP712.md
+- Files modified: None
+- Code changes: None
+- Deployment changes: None
+- Founder decisions incorporated: None (this is a proposed architecture for EIP-712 claim mechanism).
+- Recommended architecture: EIP-712 signature-based claim with campaignId, phase, claimant, quantity, nonce, deadline; includes hasClaimed mapping for one-wallet-one-claim; allocation caps can be on-chain or off-chain; signer is authorized entity; works with Multisig → Timelock control plane.
+- Remaining unresolved decisions: 
+  - EOA signer vs ERC-1271 smart-contract signer.
+  - Exact signer rotation mechanism.
+  - Whether allocation caps are stored directly in NFT contract or external claim/distribution contract.
+  - Exact campaign state machine.
+  - Exact nonce storage model.
+  - Exact Team authorization path.
+  - Whether Team uses same claim mechanism or separate authorized mint path.
+  - Exact phase identifiers.
+  - Exact administrative functions exposed to Timelock.
+  - Exact pause scope implementation.
+  - Final metadata URI architecture.
+  - Final storage provider.
+  - Finalization mechanism.
+  - Final production deployment parameters.
+- Validation: All checks pass (no public mint, no permanent whitelist, max supply 2,222, free claim, user pays gas, one-wallet-one-claim, transferable, no burn, 0% creator earnings, intelligence off-chain, non-upgradeable, Ownable2Step, Multisig→Timelock, Guardian pause-only, etc.).
+- Existing test status: Existing Solidity tests pass (npx hardhat test 14/14 PASS); holder utility test suite times out (not relevant to this spec).
+- Next recommended build: BUILD_028B — PRODUCTION NFT CONTRACT IMPLEMENTATION (only after owner review of BUILD_028A-EIP712 and other architecture documents, and resolution of UNRESOLVED decisions).
+- Stop condition: STOP after the report. Do not proceed to BUILD_028B, do not write Solidity code, do not deploy, do not modify existing contracts, do not modify tests.

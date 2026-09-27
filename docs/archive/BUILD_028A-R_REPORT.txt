@@ -1,0 +1,24 @@
+BUILD_028A-R REPORT
+Status: NOT READY — Six contract-critical decisions remain unresolved (see Section 13); specification incomplete for implementation.
+File created: docs/BUILD_028A-R_CONTRACT_DECISION_LOCK.md
+Files modified: None
+Code changes: None
+Deployment changes: None
+Founder decisions incorporated: All LOCKED decisions from Sections 3‑11 of this document and prior BUILDs.
+Recommended architecture: See Section 10 (Recommended architecture column) of the document.
+Remaining unresolved decisions: 
+  1. Mint authority
+  2. Claim authorization mechanism
+  3. Metadata URI architecture
+  4. Pre-finalization metadata behavior
+  5. Finalization mechanism
+BUILD_029/030 dependencies: 
+  - Exact reveal/model (immediate, placeholder → final, etc.)
+  - Artwork format and trait matrix
+  - Generator DNA/seed format
+  - Metadata/art consistency rules
+  - Finalized metadata JSON schema (if any additions beyond proposed)
+Validation: All validation checks pass (see Section 15 of the document).
+Existing test status: Existing Solidity tests pass (npx hardhat test 14/14 PASS); holder utility test suite times out (not relevant to this spec).
+Next recommended build: BUILD_028B — PRODUCTION NFT CONTRACT IMPLEMENTATION (only after owner review of BUILD_028A-R and resolution of the UNRESOLVED decisions listed in Section 13).
+Stop condition: STOP after the report. Do not proceed to BUILD_028B, do not write Solidity code, do not deploy, do not modify existing contracts, do not modify tests.
