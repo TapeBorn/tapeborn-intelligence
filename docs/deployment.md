@@ -134,22 +134,23 @@ After deployment, verify:
 
 The GitHub Actions workflow (`.github/workflows/ci-cd.yml`) handles:
 
-1. **Lint & Test** - Runs on every push/PR:
+1. **Lint & Test** — Runs on every push/PR to main:
    - Compilation check
    - Engine tests (`npm run test`)
    - Hardhat tests (`npm run test:hardhat`)
+   - NFT contract tests (`npm run test:contract:nft`)
+   - Normalizer tests (`npm run test:normalizer`)
    - Preflight checks
 
-2. **Deploy Testnet** - On merge to main:
-   - Deploys to Arc Testnet
-   - Verifies on testnet explorer
+2. **NO DEPLOYMENT IN CI** — A push/merge to main MUST NOT automatically deploy
+   to Arc testnet or mainnet (F-19 remediation, 2026-09-27: the previous
+   auto-deploy jobs were removed). CI = test/build/preflight only.
 
-3. **Deploy Mainnet** - Manual confirmation required:
-   - Dry-run first
-   - Actual deployment (when confirmed)
-   - Verification on mainnet explorer
+3. **Production deployment is MANUAL-ONLY** — explicit operator action following
+   the ceremony above: preflight → human/operator confirmation → deployment →
+   on-chain verification. Do not reintroduce an auto-deploy mechanism.
 
-### Required GitHub Secrets
+### Required GitHub Secrets (manual deployment only — never used by CI)
 
 | Secret | Description |
 |--------|-------------|

@@ -43,10 +43,16 @@ Following the TAPEBORN FULL FORENSIC AUDIT (2026-09-19), nine remediation phases
 | R4 | `1865660` | REMEDIATION_005: transaction + reorg safety | VERIFIED |
 | R5 | `f2a8719` | REMEDIATION_006: fix canonical signal identity | VERIFIED |
 | R6 | `cb8fe6f` | REMEDIATION_011/012: confidence rules + tests | VERIFIED |
-| R7 | `1865660` | REMEDIATION_013/014: signal persistence + reorg lifecycle | VERIFIED |
+| R7 | `e583af8` | REMEDIATION_013/014: signal persistence + reorg lifecycle | VERIFIED |
 | R8 | `e583af8` | REMEDIATION_015/016: real rolling chain average (USDC Transfer events) | VERIFIED |
 | R9 | `485cdbf` | REMEDIATION_017/018: chain average semantic fix + reorg state machine | VERIFIED |
 | R9b | `6d3d902` | REMEDIATION_021/022/023/024: adversarial precision + semantic verification | VERIFIED |
+
+> **R4/R7 hash note (F-13, corrected 2026-09-27):** R7 was previously listed as `1865660`
+> (duplicate of R4). Corrected to `e583af8`, independently confirmed by commit content:
+> commit `e583af8` message = "REMEDIATION_013/014/015/016: signal persistence + reorg lifecycle
+> + real rolling chain average" — it contains BOTH remediation halves, so R7 and R8 share the
+> same commit legitimately. R4 = `1865660` (REMEDIATION_005) was already correct.
 
 ## Notes
 
@@ -113,3 +119,8 @@ MAINNET: BLOCKED
 ---
 
 *MASTER_ROADMAP.md — Canonical milestone reference for TapeBorn Intelligence.*
+
+> **ERA-2 / NFT BUILD numbering + collision registry:** canonical BUILD registry for both
+> numbering eras (SIGNAL BUILD_024/026/029-037 and NFT BUILD_024-028B), the BUILD_024/026
+> collisions, and the future numbering rule (BUILD_038 pending founder ruling) live in
+> [docs/BUILD_REGISTRY.md](docs/BUILD_REGISTRY.md).

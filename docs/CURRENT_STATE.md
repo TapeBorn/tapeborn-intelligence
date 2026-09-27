@@ -2,8 +2,8 @@
 
 **TapeBorn — Canonical Current State**
 
-**Updated:** 2026-09-21
-**Commit:** `5909446` (DOC: sync README + MASTER_ROADMAP)
+**Updated:** 2026-09-27 (canonicalization + forensic remediation pass)
+**Commit:** `0f8ed96` (test(repo): canonicalize test execution and provenance)
 **Branch:** main
 
 ---
@@ -22,8 +22,9 @@
 | **Evidence/Provenance** | Deterministic Signal ID, metadata schema v1.0.0 |
 | **Persistence** | SQLite + in-memory lastSeenMap |
 | **Reorg Handling** | Block hashes, invalidation, replacement, adversarial tests (49/49 PASS) |
-| **SignalArtifact.sol** | ERC721 + Ownable + Pausable, mintPaused, MAX_SUPPLY configurable |
-| **Genesis Deployment** | Arc Testnet `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` (chain 5042002) |
+| **SignalArtifact.sol** | ERC721 + Ownable + Pausable, mintPaused, MAX_SUPPLY configurable|
+| **TapeBornProductionNFT.sol (BUILD_028B)** | FROZEN / FULLY CLOSED — ERC721 + Ownable2Step + Pausable + EIP712 + AccessControl, EIP-712 free claim, 2,222 supply, 75-test suite|
+| **Genesis Deployment** | Arc Testnet `0x80B87fa686C8FC91A5252854E82ea282c1B6b814` (chain 5042002)|
 | **Genesis Mint** | Token ID 0, Signal ID `sig_454539d0`, source block 60347218 |
 | **Behavioral Tests** | 14 Hardhat tests PASS (on-chain revert behavior) |
 
@@ -36,17 +37,17 @@
 | Metadata Immutability | Schema v1.0.0 | Not explicit |
 | Token Flow Anomaly | Implemented | Uses fixed threshold (not dynamic) |
 | Orchestrator Validator | Missing | Networks tested, validator not |
-| Control Plane (testnet) | Deployed & role-separated | Treasury Safe not deployed |
+| Control Plane (testnet) | Deployed & role-separated (17/17 negative tests) | Treasury Safe NON-FUNCTIONAL (see below) |
 
 ### NOT IMPLEMENTED / NOT STARTED
 
 | Component | Status |
 |----------|--------|
-| **Treasury Safe (testnet)** | NOT DEPLOYED |
-| **Admin Safe (2-of-3)** | NOT DEPLOYED |
+| **Treasury Safe (testnet)** | NON-FUNCTIONAL placeholder at `0xe9c0cb...` — read-only verified 2026-09-27: `getThreshold()` = 0, `getOwners()` empty, nonce = 1, singleton proxy pattern|
+| **Admin Safe (2-of-3)** | DEPLOYED & FUNCTIONAL `0xfDff2Ef0...` — read-only verified 2026-09-27: `getThreshold()` = 2|
 | **Production 24h Timelock** | NOT DEPLOYED |
-| **Production NFT Contract** | NOT STARTED (OD-P) |
-| **Final Mint Authority** | NOT STARTED (OD-P) |
+| **Production NFT Contract** | NOT STARTED (OD-P)|
+| **Production NFT Deployment** | BLOCKED (contract FROZEN + 204/204; deployment gates open)|
 | **Metadata Architecture** | NOT STARTED (OD-Meta) |
 | **Production Custody** | NOT STARTED |
 | **Independent Security Audit** | NOT ENGAGED |
@@ -54,7 +55,18 @@
 | **Incident Response Runbook** | NOT CREATED |
 | **Public Signal Dashboard** | NOT IMPLEMENTED |
 | **Final NFT Collection / Art / Lore** | NOT IMPLEMENTED |
-| **Holder Utility / Website / Community** | NOT IMPLEMENTED |
+| **Holder Utility / Website / Community** | NOT IMPLEMENTED|
+
+### TREASURY (read-only verified 2026-09-27)
+
+| Check | Result |
+|-------|--------|
+| Address | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` |
+| `getThreshold()` | 0 (NOT 2 — non-functional) |
+| `getOwners()` | empty (0x) |
+| Nonce | 1 |
+| Storage slot 0 | singleton `0xff51a589...` (Safe proxy pattern) |
+| Status | **NON-FUNCTIONAL — deployment ceremony required as future explicit action** (3 owners, threshold 2, on-chain verification, post-deployment reconciliation) |
 
 ---
 
@@ -129,6 +141,7 @@
 | OD-FC | Final collection design | OPEN |
 | OD-Meta | Metadata architecture | OPEN |
 | OD-Treasury | Treasury accounting/disbursement | OPEN |
+| OD-TBART | Ratify contract symbol `TBART` (rank-1 lock is silent; contract is FROZEN with `_symbol = "TBART"`) | OPEN |
 | OD-Audit | Audit provider | OPEN |
 
 ---
@@ -138,8 +151,11 @@
 | Environment | Status |
 |-------------|--------|
 | **DEVELOPMENT** | GO |
-| **TESTNET** | GO |
+| **TESTNET** | GO|
 | **MAINNET** | BLOCKED |
+
+**CI (F-19, 2026-09-27):** push/merge to main = test/build/preflight ONLY — no automatic
+testnet or mainnet deployment. Production deployment is MANUAL-ONLY per `docs/deployment.md`.
 
 ### Mainnet Blockers
 1. Mainnet USDC address placeholder
@@ -152,10 +168,14 @@
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Node.js (engine, signal, normalizer, adversarial) | 49 | ✅ PASS |
-| Hardhat behavioral (contract access) | 14 | ✅ PASS |
-| Negative permission tests (testnet) | 17 | ✅ PASS |
-| Preflight (mainnet) | 10 | ✅ PASS |
+| NFT contract (BUILD_028B, `npm run test:contract:nft`) | 75 | ✅ PASS |
+| Hardhat (access + adversarial, `npm run test:hardhat`) | 80 | ✅ PASS |
+| Engine (Node.js, `npm test`) | 49 | ✅ PASS |
+| **Canonical BUILD_028B total** | **204** | ✅ **ALL PASS** |
+| Normalizer (`npm run test:normalizer`) | 28 | ✅ PASS (supplementary) |
+| Contract access ABI (`npm run test:contract:access`) | 6 | ✅ PASS (supplementary) |
+| Negative permission testnet (`npm run test:negative`) | 17 | ✅ PASS (supplementary) |
+| Preflight (mainnet, `npm run preflight`) | 10 | ✅ PASS (supplementary) |
 
 ---
 
@@ -163,7 +183,9 @@
 
 | Path | Purpose |
 |------|---------|
-| `contracts/SignalArtifact.sol` | Genesis NFT contract |
+| `contracts/SignalArtifact.sol` | Genesis NFT contract|
+| `contracts/TapeBornProductionNFT.sol` | Production NFT (BUILD_028B, FROZEN)|
+| `docs/BUILD_REGISTRY.md` | Canonical BUILD registry (era collisions + numbering rule)|
 | `src/signal/engine.js` | Signal Engine (7 detectors) |
 | `src/signal/normalizer.js` | Normalization (28 tests) |
 | `src/signal/state.js` | SQLite persistence |

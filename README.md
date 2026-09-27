@@ -12,7 +12,8 @@ NFTs are the artifact layer, not the entire product. The core value is the intel
 |-------|--------|
 | **Intelligence Layer** | ✅ Implemented & Verified (49/49 tests PASS) |
 | **Signal Artifact Infrastructure** | 🟡 Genesis Experimental Layer (testnet only) |
-| **Production NFT Collection** | ❌ Not Implemented |
+| **Production NFT Contract (BUILD_028B)** | 🟢 **FROZEN / FULLY CLOSED — 204/204 tests PASS** |
+| **Production NFT Deployment** | 🔴 BLOCKED (contract frozen; deployment gates open) |
 | **Mainnet Deployment** | 🔴 BLOCKED (9 blockers) |
 
 **DEVELOPMENT: GO** | **TESTNET: GO** | **MAINNET: BLOCKED**
@@ -50,6 +51,7 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 | TapeBornControlPlaneTest | `0x07602D7Da6602F538A4e6BBf89987AfC776F9c62` |
 | Admin Safe (2-of-3) | `0xfDff2Ef0C32433A2044101257A18219620fFcd5B` |
 | Treasury Safe (2-of-3) | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` |
+| Treasury Safe STATUS | ⚠️ **NON-FUNCTIONAL placeholder** — `getThreshold()`=0, `getOwners()` empty (verified read-only 2026-09-27) |
 | Guardian | `0xb88DE39aF3835838323a83986702b2974FA0bDB0` |
 | Deployment Wallet | `0x12627b8E344DEC94cF52B0D0A0B0B6b98dC3e631` |
 
@@ -83,7 +85,7 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 
 | Task | Status | Evidence |
 |---|---|---|
-| **CP-FIX-001** Treasury Safe Deployment | ✅ PASS | 2-of-3 Safe deployed at `0xe9c0cb...` |
+| **CP-FIX-001** Treasury Safe Deployment | ⚠️ CORRECTED 2026-09-27 | Proxy deployed but **NON-FUNCTIONAL** — read-only verified: `getThreshold()`=0, `getOwners()` empty (see [TB-CP-FIX-001-REPORT.md](TB-CP-FIX-001-REPORT.md) correction) |
 | **CP-FIX-002** Timelock Role Cleanup | ✅ PASS | Deployer DEFAULT_ADMIN + EXECUTOR removed |
 | **CP-FIX-001/002** Role Separation | ✅ PASS | 17/17 negative tests PASS |
 | Reorg/Adversarial Tests | ✅ PASS | 49/49 PASS |
@@ -128,19 +130,19 @@ See [`artifacts/genesis_collection.json`](artifacts/genesis_collection.json) for
 | BUILD_010 | First Signal Artifact (dry-run) — generated metadata | DONE |
 | BUILD_011 | Metadata system — provenance and Signal ID | DONE |
 | BUILD_011.1 | Harden provenance timestamp integrity | DONE |
-| BUILD_012 | Add public signal dashboard | NOT IMPLEMENTED |
-| BUILD_013 | Add reliability layer | NOT IMPLEMENTED |
+| BUILD_012 | Add public signal dashboard | DONE (implementation tracked: `scripts/build_012.js`) |
+| BUILD_013 | Add reliability layer | DONE (implementation tracked: `src/orchestrator/retry.js`, `rateLimit.js`) |
 | BUILD_014 | Add Arc mainnet readiness | PARTIALLY VERIFIED |
 | BUILD_015 | Finalize Genesis Collection | DONE |
 | BUILD_016 | Mainnet readiness and deployment hardening | BLOCKED (9 blockers) |
-| BUILD_017 | Post-launch intelligence and chain evaluation | NOT IMPLEMENTED |
-| BUILD_018 | Signal Intelligence v1 | NOT IMPLEMENTED |
+| BUILD_017 | Post-launch intelligence and chain evaluation | DONE (implementation tracked: `scripts/build_017_usage.js`) |
+| BUILD_018 | Signal Intelligence v1 | DONE (implementation tracked: `src/signal/engine.js` v1 detectors) |
 | BUILD_019 | Signal Expansion — add 4 new signal types | PARTIALLY VERIFIED |
-| BUILD_020 | Add read-only agent interface | NOT IMPLEMENTED |
+| BUILD_020 | Add read-only agent interface | DONE (implementation tracked: `scripts/build_020.js`) |
 | BUILD_021 | Roadmap Gap Analysis | NOT IMPLEMENTED (intentional) |
 | BUILD_022.1 | Harden mainnet deployment gate | PARTIALLY VERIFIED |
 | BUILD_023 | Agent Hardening + Documentation Reconciliation | PARTIALLY VERIFIED |
-| CP-FIX-001 | Treasury Safe Deployment | ✅ VERIFIED |
+| CP-FIX-001 | Treasury Safe Deployment | ⚠️ CORRECTED — proxy NON-FUNCTIONAL on-chain (2026-09-27) |
 | CP-FIX-002 | Timelock Role Cleanup | ✅ VERIFIED |
 
 > **Status Definitions:** DONE = implemented, tested, verified in testnet; VERIFIED = implementation + spec compliance + tests + persistence evidence; PARTIALLY VERIFIED = some evidence but incomplete; NOT IMPLEMENTED = absent; BLOCKED = dependency/external decision required; NOT VERIFIED IN COMMIT HISTORY = claim exists but no commit evidence found.
@@ -236,11 +238,14 @@ Before deploying to Arc Mainnet:
 
 | Suite | Tests | Status |
 |---|---|---|
-| Node.js (engine, signal, normalizer, adversarial, reorg) | 49 | ✅ PASS |
-| Hardhat behavioral (contract access) | 14 | ✅ PASS |
-| Negative permission tests (testnet) | 17 | ✅ PASS |
-| Preflight (mainnet) | 10 | ✅ PASS |
-| **Total** | **90** | ✅ **ALL PASS** |
+| NFT contract (BUILD_028B, `npm run test:contract:nft`) | 75 | ✅ PASS |
+| Hardhat (access + adversarial, `npm run test:hardhat`) | 80 | ✅ PASS |
+| Engine (Node.js, `npm test`) | 49 | ✅ PASS |
+| **Canonical BUILD_028B total** | **204** | ✅ **ALL PASS** |
+| Normalizer (`npm run test:normalizer`) | 28 | ✅ PASS (supplementary) |
+| Contract access ABI (`npm run test:contract:access`) | 6 | ✅ PASS (supplementary) |
+| Negative permission testnet (`npm run test:negative`) | 17 | ✅ PASS (supplementary) |
+| Preflight (mainnet, `npm run preflight`) | 10 | ✅ PASS (supplementary) |
 
 ---
 
@@ -269,6 +274,7 @@ Before deploying to Arc Mainnet:
 - **System Audit:** [`TAPEBORN_SYSTEM_AUDIT_001.md`](TAPEBORN_SYSTEM_AUDIT_001.md)
 - **CP-FIX-001 Report:** [`TB-CP-FIX-001-REPORT.md`](TB-CP-FIX-001-REPORT.md)
 - **CP-FIX-002 Report:** [`TB-CP-FIX-002-REPORT.md`](TB-CP-FIX-002-REPORT.md)
+- **BUILD Registry (era collisions + numbering rule):** [`docs/BUILD_REGISTRY.md`](docs/BUILD_REGISTRY.md)
 
 ---
 

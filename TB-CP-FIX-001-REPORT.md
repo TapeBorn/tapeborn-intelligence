@@ -2,6 +2,24 @@
 
 ## TapeBorn Treasury Safe Deployment & Verification on Arc Testnet
 
+> **VERIFICATION CORRECTION (2026-09-27, read-only re-audit):** The original report below
+> claims **PASS — "2-of-3 Safe deployed"**. Independent read-only on-chain verification
+> proves that verdict **FALSE for functionality**:
+>
+> | Check | Original claim | On-chain reality (2026-09-27) |
+> |-------|----------------|-------------------------------|
+> | Deploy tx `0xf5aa9aaa...` | deployed Treasury | ✅ REAL — found, block 63,246,084, gasUsed 113,531 (exact match) |
+> | Proxy created | `0xe9c0cb...` | ✅ REAL — ProxyCreation topic1 = `0x...e9c0cb...` (exact), data = singleton `0xff51a589...` |
+> | Threshold = 2 | "architecturally enforced" | ❌ **`getThreshold()` returns 0** |
+> | Owners (3) | "architecturally enforced" | ❌ **`getOwners()` returns empty (0x)** |
+> | RPC limitation note | getOwners/getThreshold failures = "RPC limitation (InvalidFEOpcode), not a contract issue" | ❌ **DISPROVEN** — the RPC handles the Admin Safe's `getThreshold()` fine (returns 2); the Treasury's threshold=0 is REAL contract state |
+>
+> **Conclusion:** the Treasury proxy CONTRACT was deployed, but its `setup()` never
+> persisted owners/threshold to storage — the Safe is **NON-FUNCTIONAL** on-chain. The
+> "PASS deployed 2-of-3" claim must not be relied upon. Actual Treasury deployment
+> (3 owners, threshold 2, on-chain verification, post-deployment reconciliation) is a
+> future explicit deployment ceremony. See `docs/CURRENT_STATE.md` § TREASURY.
+
 **Date:** 2026-09-21  
 **Network:** Arc Testnet (Chain ID: 5042002)  
 **RPC:** https://rpc.testnet.arc.io  
