@@ -156,3 +156,8 @@ cache-hardhat/
 
 # Runtime data (signal engine SQLite state — never commit)
 .data/
+
+# holder-utility workstream (local experiment; spec tracked on branch
+# docs/holder-utility-mvp — must not pollute the NFT production surface)
+holder-utility/
+test/
