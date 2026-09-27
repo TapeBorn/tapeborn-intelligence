@@ -113,7 +113,7 @@ async function runTests() {
   results.push({ test: 'Treasury role Timelock-controlled', pass: r15 });
   
   // 16. Owner remains Timelock
-  const r16 = (await cp.owner()).toLowerCase() === '0xb1937d3f88d40dB94CfE56a890A53213cc582e36';
+  const r16 = (await cp.owner()).toLowerCase() === '0xb1937d3f88d40dB94CfE56a890A53213cc582e36'.toLowerCase();
   console.log('Test 16: Owner remains Timelock -', r16 ? 'PASS' : 'FAIL');
   results.push({ test: 'Owner remains Timelock', pass: r16 });
   

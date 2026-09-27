@@ -160,4 +160,4 @@ cache-hardhat/
 # holder-utility workstream (local experiment; spec tracked on branch
 # docs/holder-utility-mvp — must not pollute the NFT production surface)
 holder-utility/
-test/
+/test/
