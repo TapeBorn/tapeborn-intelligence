@@ -1,0 +1,13 @@
+# Whitelist CSV Format Example
+# This file demonstrates the expected format for the founder-provided whitelist.
+# **DO NOT** add real wallet addresses to this file in the repository.
+# The actual whitelist will be provided by the founder via a secure channel
+# and must not be committed to Git.
+#
+# Format: one Ethereum address per line, lowercase, with 0x prefix.
+# Lines starting with # are comments and are ignored.
+#
+# Example:
+# 0x1234567890abcdef1234567890abcdef12345678
+# 0xabcdef1234567890abcdef1234567890abcdef12
+# 0x9876543210fedcba9876543210fedcba98765432

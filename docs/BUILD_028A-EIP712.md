@@ -627,7 +627,7 @@ Guardian tetap hanya pause authority sesuai BUILD_028A-R.
 
 ---
 
-# 31. Campaign Activation
+31. Campaign Activation
 
 Recommended lifecycle:
 

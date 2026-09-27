@@ -153,3 +153,6 @@ cache-hardhat/
 
 # NPM config
 .npmrc
+
+# Runtime data (signal engine SQLite state — never commit)
+.data/

@@ -71,6 +71,9 @@ jobs:
       - name: Run NFT contract tests
         run: npm run test:contract:nft
 
+      - name: Run normalizer tests
+        run: npm run test:normalizer
+
       - name: Run preflight checks
         run: npm run preflight
         env:
