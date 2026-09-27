@@ -115,3 +115,13 @@ The two eras **independently used** BUILD_024 and BUILD_026 for different work:
    is occupied.
 3. Remediation phases remain named `REMEDIATION_N` / `R<N>` and do not consume BUILD numbers.
 4. Historical commits are immutable; collisions are resolved by context, never renaming.
+
+---
+
+## Engineering History / Audit Trail
+
+For the complete engineering chronology, audit trail, and remediation registry, see:
+
+- **Engineering Ledger:** `docs/ENGINEERING_LEDGER.md` — Master chronology (Layer A), BUILD collision reconciliation (Layer B), audit→finding→fix graph (Layer C), current open state (Layer D), provenance rules (Layer E)
+- **Audit Registry:** `docs/AUDIT_REGISTRY.md` — Canonical index of all audits, reconciliations, on-chain verifications, closure reviews, and canonicalization passes
+- **Remediation Registry:** `docs/REMEDIATION_REGISTRY.md` — Complete finding→remediation→verification chain for F-01..F-22, GAP-A..GAP-H, SG-01..SG-07, and REMEDIATION_002..024

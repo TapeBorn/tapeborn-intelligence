@@ -30,7 +30,7 @@
 
 ### PARTIALLY IMPLEMENTED / VERIFIED
 
-| Component | Status | Gap |
+|| Component | Status | Gap ||
 |----------|--------|-----|
 | Persistent State | SQLite implemented | lastSeenMap still in-memory |
 | Signal ID | Custom hash | Needs canonical keccak256 |
@@ -38,6 +38,16 @@
 | Token Flow Anomaly | Implemented | Uses fixed threshold (not dynamic) |
 | Orchestrator Validator | Missing | Networks tested, validator not |
 | Control Plane (testnet) | Deployed & role-separated (17/17 negative tests) | Treasury Safe NON-FUNCTIONAL (see below) |
+
+---
+
+## Engineering History / Audit Trail
+
+For the complete engineering chronology, audit trail, and remediation registry, see:
+
+- **Engineering Ledger:** `docs/ENGINEERING_LEDGER.md`
+- **Audit Registry:** `docs/AUDIT_REGISTRY.md`
+- **Remediation Registry:** `docs/REMEDIATION_REGISTRY.md`
 
 ### NOT IMPLEMENTED / NOT STARTED
 
