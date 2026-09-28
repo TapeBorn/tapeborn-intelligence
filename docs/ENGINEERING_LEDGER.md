@@ -97,7 +97,7 @@ Chronological stream: **BUILD → AUDIT → FINDING → REMEDIATION → VERIFICA
 | BUILD_029 | ERA-1 / SIGNAL | Behavioral access-control tests (`57648c5`) | ERA-2 Visual DNA / Art Production System | BUILD_REGISTRY.md:63; BUILD_024_NFT_INTELLIGENCE_BRIDGE.md:254 | DOCUMENTED COLLISION | ERA-1 occupies |
 | BUILD_030 | ERA-1 / SIGNAL | Lock reproducible dev env (`553e090`, R1) | ERA-2 Generator / metadata pipeline | BUILD_REGISTRY.md:64; BUILD_028A_PRODUCTION_NFT_CONTRACT_ARCHITECTURE.md:395 | DOCUMENTED COLLISION | ERA-1 occupies |
 | BUILD_033 | ERA-1 / SIGNAL | Persistent signal state SQLite (`ff6cbd6`, R4) | ERA-2 Deployment/ops tooling | BUILD_REGISTRY.md:67; BUILD_028B_FINAL_CLOSURE_REVIEW.md:101 | DOCUMENTED COLLISION | ERA-1 occupies (marked "never reuse") |
-| BUILD_038 | UNASSIGNED | Next = highest + 1 (BUILD_037 + 1) | N/A | BUILD_REGISTRY.md:12-13,112-113 | **PENDING FOUNDER** | **UNASSIGNED — DO NOT ASSIGN** |
+| BUILD_038 | AUTHORIZED | Next = highest + 1 (BUILD_037 + 1) | Scope E (A+B+C) | BUILD_REGISTRY.md:12-13,112-113 | **AUTHORIZED — SCOPE E (2026-09-28)** | **AUTHORIZED, current stage 038-A; no new number** |
 
 ---
 
@@ -192,7 +192,7 @@ CURRENT STATE: BUILD_028B FROZEN, 204/204 PASS, MAINNET BLOCKED
 - holder-utility merge — BRANCH EXISTS
 
 ### UNRESOLVED
-- **Treasury nonce** — RPC/DOCUMENTATION CONFLICT — UNRESOLVED (see below)
+- **Treasury nonce** — RPC/DOCUMENTATION CONFLICT → **RESOLVED — DOCUMENTATION TRANSCRIPTION ERROR (2026-09-28)**: canonical Treasury nonce = 0 (see below)
 
 > Post-gate reconciliation (2026-09-27): GAP-C, GAP-D, GAP-G resolved; GAP-H partially resolved.
 > The four items below were UNRESOLVED as of the closure review (2026-09-26) and are now resolved —
@@ -214,6 +214,14 @@ CURRENT STATE: BUILD_028B FROZEN, 204/204 PASS, MAINNET BLOCKED
 Classification: **RPC/DOCUMENTATION CONFLICT — UNRESOLVED.** No conclusion reached on which
 observation is correct; no on-chain write performed; nothing redeployed.
 
+**RESOLUTION (2026-09-28, founder-validated GREEN):** fresh read-only verification found the
+Treasury deployment TX receipt (`0xf5aa9aaab11f16213377f03fad68636ab458dadb27668327d47b80a0350de35b`,
+block 63246084, status 0x1): event `ProxyCreation` → proxy `0xe9c0cb...` + singleton `0xff51a589...` —
+proxy address unchanged since deployment. Safe nonce cannot decrease without redeploy; proxy was never
+re-created. Canonical Treasury nonce = **0** (nonce() ×2 + storage slot 9 = 0, confirmed). The documented
+value 1 was a **TRANSCRIPTION ERROR**, likely confused with Admin Safe nonce = 1, which is separate and
+valid. The conflict record above remains historically visible.
+
 ### UNVERIFIED
 - Genesis deployment transaction (`0x8dec28c1...`)
 - Genesis mint transaction (`0x3d2bad4f...`)
@@ -227,7 +235,7 @@ observation is correct; no on-chain write performed; nothing redeployed.
 ### PENDING FOUNDER
 - **BUILD_038** — Next production stage scope
 - **OD-G** — Guardian 1-of-1 vs 1-of-2
-- **OD-R** — Quorum-loss recovery model
+- **OD-R** — Quorum-loss recovery model → **RULED** (founder ruling A, 2026-09-28): controlled governance/recovery process; no unrestricted founder bypass; no new mechanism invented
 - **OD-C** — Final production blockchain
 - **OD-M** — Multisig provider
 - **OD-P** — Production contract architecture

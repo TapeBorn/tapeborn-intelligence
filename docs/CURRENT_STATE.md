@@ -54,7 +54,7 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 
 | Component | Status |
 |----------|--------|
-| **Treasury Safe (testnet)** | NON-FUNCTIONAL placeholder at `0xe9c0cb...` — `getThreshold()` = 0, `getOwners()` empty, singleton proxy pattern. **Nonce CONFLICT — UNRESOLVED** (see below) |
+| **Treasury Safe (testnet)** | NON-FUNCTIONAL placeholder at `0xe9c0cb...` — `getThreshold()` = 0, `getOwners()` empty, singleton proxy pattern. **Nonce = 0 (canonical, evidence-based 2026-09-28)** |
 | **Admin Safe (2-of-3)** | DEPLOYED & FUNCTIONAL `0xfDff2Ef0...` — read-only verified 2026-09-27: `getThreshold()` = 2|
 | **Production 24h Timelock** | NOT DEPLOYED |
 | **Production NFT Contract** | NOT STARTED (OD-P)|
@@ -75,7 +75,7 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 | Address | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` |
 | `getThreshold()` | 0 (NOT 2 — non-functional) |
 | `getOwners()` | empty (0x) |
-| Nonce | **CONFLICT / UNRESOLVED** — documented observation 2026-09-27: 1; read-only RPC observation 2026-09-28: 0 (repeated twice). No conclusion reached; no on-chain write performed |
+| Nonce | **0 — canonical** (nonce() ×2 + storage slot 9 = 0; deploy TX `0xf5aa9aaa...` receipt FOUND, block 63246084, same proxy since deployment). Prior documented value 1 = **TRANSCRIPTION ERROR** (confused with Admin Safe nonce = 1, separate and valid). Historical conflict record preserved in Engineering Ledger |
 | Storage slot 0 | singleton `0xff51a589...` (Safe proxy pattern) |
 | Status | **NON-FUNCTIONAL — deployment ceremony required as future explicit action** (3 owners, threshold 2, on-chain verification, post-deployment reconciliation) |
 
@@ -89,7 +89,8 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 | GAP-D | RESOLVED — event `ClaimCampaignPhase`, commit `b212cd8` |
 | GAP-G | RESOLVED (documentation-only) — implicit enforcement, commit `3ee7604` |
 | GAP-H | PARTIALLY RESOLVED — lock drift superseded by `3ee7604` (9,219 lines/677 packages consistent); remaining no-consumer question OPEN |
-| BUILD_038 | PENDING FOUNDER SCOPE RULING (not assigned) |
+| BUILD_038 | AUTHORIZED — SCOPE E (2026-09-28). Current stage: 038-A — documentation/governance state reconciliation (in progress) |
+| 038 remaining | holder-utility tracking → 038-B · Treasury ceremony → 038-C · genesis deploy/mint receipts → later verification · Arc Studio capability verification → 038-D · production pre-deployment gate → 038-E |
 
 ---
 
@@ -157,7 +158,7 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 | ID | Decision | Status |
 |----|----------|--------|
 | OD-G | Guardian 1-of-1 vs 1-of-2 | OPEN |
-| OD-R | Quorum-loss recovery model | OPEN |
+| OD-R | Quorum-loss recovery: controlled governance/recovery process — no unrestricted founder bypass (founder ruling A, 2026-09-28) | RULED |
 | OD-C | Final production blockchain | OPEN |
 | OD-M | Multisig provider | OPEN |
 | OD-P | Production contract architecture | OPEN |

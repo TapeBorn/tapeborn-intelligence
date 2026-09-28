@@ -9,9 +9,10 @@
 >    must not reuse it.
 > 3. **Next BUILD number = highest number used anywhere + 1, pending founder ruling.**
 >    The highest number used anywhere is **BUILD_037** (era-1 / SIGNAL remediation, `3a06ba6`).
->    Therefore the next available number is **BUILD_038**. **DO NOT assign it yet** — the
->    registry must be canonical first (it is now) and the founder must rule on what the next
->    production stage constitutes.
+>    Therefore the next available number is **BUILD_038**. **AUTHORIZED (2026-09-28):** founder
+>    has ruled on the next production stage — scope E (combined: deployment + role ceremony /
+>    holder-utility + GAP-H closure / Treasury nonce verification + Treasury ceremony).
+>    BUILD_038 is authorized but NOT executed as a whole; execution is staged (038-A..038-E).
 > 4. Era-1 vs era-2 collisions are **documented, not resolved by renaming**. Ambiguity is
 >    resolved by context: the file/commit/workstream a number appears in.
 
@@ -109,8 +110,9 @@ The two eras **independently used** BUILD_024 and BUILD_026 for different work:
 
 ## Future Numbering Rule
 
-1. Next production stage = **BUILD_038** (highest used anywhere BUILD_037 + 1). **Do not
-   assign BUILD_038 until the founder rules on what that stage is.**
+1. Next production stage = **BUILD_038** (highest used anywhere BUILD_037 + 1).
+   **AUTHORIZED (2026-09-28) — Scope E (A+B+C combined). Current stage: 038-A (documentation /
+   governance state reconciliation). Not fully executed; not a new number.**
 2. All new BUILDs must check this registry first. A number appearing in **either** era table
    is occupied.
 3. Remediation phases remain named `REMEDIATION_N` / `R<N>` and do not consume BUILD numbers.
