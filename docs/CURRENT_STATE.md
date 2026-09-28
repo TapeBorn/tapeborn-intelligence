@@ -2,8 +2,9 @@
 
 **TapeBorn — Canonical Current State**
 
-**Updated:** 2026-09-27 (canonicalization + forensic remediation pass)
-**Commit:** `0f8ed96` (test(repo): canonicalize test execution and provenance)
+**Updated:** 2026-09-27 (post-gate documentation reconciliation)
+**Commit:** `2cc2a81` (docs: establish canonical engineering audit ledger)
+**Prior checkpoint:** `0f8ed96` (test(repo): canonicalize test execution and provenance) — canonicalization + forensic remediation pass
 **Branch:** main
 
 ---
@@ -53,7 +54,7 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 
 | Component | Status |
 |----------|--------|
-| **Treasury Safe (testnet)** | NON-FUNCTIONAL placeholder at `0xe9c0cb...` — read-only verified 2026-09-27: `getThreshold()` = 0, `getOwners()` empty, nonce = 1, singleton proxy pattern|
+| **Treasury Safe (testnet)** | NON-FUNCTIONAL placeholder at `0xe9c0cb...` — `getThreshold()` = 0, `getOwners()` empty, singleton proxy pattern. **Nonce CONFLICT — UNRESOLVED** (see below) |
 | **Admin Safe (2-of-3)** | DEPLOYED & FUNCTIONAL `0xfDff2Ef0...` — read-only verified 2026-09-27: `getThreshold()` = 2|
 | **Production 24h Timelock** | NOT DEPLOYED |
 | **Production NFT Contract** | NOT STARTED (OD-P)|
@@ -74,9 +75,21 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 | Address | `0xe9c0cb8729159e2b111f00aeda111d9a361ec7be` |
 | `getThreshold()` | 0 (NOT 2 — non-functional) |
 | `getOwners()` | empty (0x) |
-| Nonce | 1 |
+| Nonce | **CONFLICT / UNRESOLVED** — documented observation 2026-09-27: 1; read-only RPC observation 2026-09-28: 0 (repeated twice). No conclusion reached; no on-chain write performed |
 | Storage slot 0 | singleton `0xff51a589...` (Safe proxy pattern) |
 | Status | **NON-FUNCTIONAL — deployment ceremony required as future explicit action** (3 owners, threshold 2, on-chain verification, post-deployment reconciliation) |
+
+---
+
+## GAP STATUS (post-gate reconciliation, 2026-09-27)
+
+| Gap | Current Status |
+|-----|----------------|
+| GAP-C | RESOLVED — founder ruling in lock SECTION 8, commit `b212cd8` |
+| GAP-D | RESOLVED — event `ClaimCampaignPhase`, commit `b212cd8` |
+| GAP-G | RESOLVED (documentation-only) — implicit enforcement, commit `3ee7604` |
+| GAP-H | PARTIALLY RESOLVED — lock drift superseded by `3ee7604` (9,219 lines/677 packages consistent); remaining no-consumer question OPEN |
+| BUILD_038 | PENDING FOUNDER SCOPE RULING (not assigned) |
 
 ---
 

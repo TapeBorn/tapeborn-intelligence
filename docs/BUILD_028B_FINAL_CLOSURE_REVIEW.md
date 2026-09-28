@@ -4,6 +4,10 @@
 **Date:** 2026-09-26 · **Mode:** review-only (no restart, no rebuild, no deploy, no RPC, no wallet, no key)
 **Deployment status:** NOT deployed.
 
+> **Historical snapshot:** the conditional blockers recorded here were subsequently
+> resolved/updated by `b212cd8` (GAP-C/GAP-D), `3ee7604` (GAP-G + deps), and subsequent
+> reconciliation. This document remains preserved as the 2026-09-26 review record.
+
 ---
 
 ## PHASE 9 — FINAL CLOSURE CLASSIFICATION

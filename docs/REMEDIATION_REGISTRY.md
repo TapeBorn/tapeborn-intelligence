@@ -39,12 +39,12 @@ Canonical registry of all findings, their remediation, and verification status.
 |-----|-------|----------|----------|-----|--------|--------------|--------|
 | **GAP-A** | 2026-09-26 | BUILD_028B_IMPL §5, FINAL_CLOSURE §1 | Medium (ceremony) | Test proves `grantRole(DEFAULT_ADMIN, timelock)` + `renounceRole(deployer)` → deployer zero roles | `ecedd0b` (group 12 test) | Group 12 PASS | **CLOSED AS TEST** — ceremony at BUILD_033 |
 | **GAP-B** | 2026-09-26 | BUILD_028B_IMPL §5 | Low | MAX_SUPPLY exhaustion test added (group 12) | `ecedd0b` | 75/75 + group 12 PASS | **CLOSED** |
-| **GAP-C** | 2026-09-26 | FINAL_CLOSURE §3, BUILD_028B_IMPL §5 | Medium (ops/UX) | Documented; founder decision needed on "non-ACTIVE may mutate" vs "pre-ACTIVE only" | — | Group 4 tests assert permissive behavior | **UNRESOLVED** — founder ruling required |
-| **GAP-D** | 2026-09-26 | FINAL_CLOSURE §4 | Medium (integration) | Event `Claim` vs spec `ClaimCampaignPhase` — rename or amend §21 | — | Tests assert `Claim` (lines 374, 857) | **UNRESOLVED** — founder ruling required |
+| **GAP-C** | 2026-09-26 | FINAL_CLOSURE §3, BUILD_028B_IMPL §5 | Medium (ops/UX) | Documented; founder decision needed on "non-ACTIVE may mutate" vs "pre-ACTIVE only" | — | Group 4 tests assert permissive behavior | **RESOLVED (2026-09-26)** — founder ruling recorded in lock SECTION 8, commit `b212cd8`. setAllocationCap permits DRAFT/CONFIGURED/REVIEWED only, reverts "Allocation locked" in ACTIVE/EXHAUSTED/CLOSED. Evidence: `b212cd8` + contract lines 91-100 + tests 325/343 |
+| **GAP-D** | 2026-09-26 | FINAL_CLOSURE §4 | Medium (integration) | Event `Claim` vs spec `ClaimCampaignPhase` — rename or amend §21 | — | Tests asserted `Claim` at closure (lines 374, 857); current tests 379/862 assert `ClaimCampaignPhase` | **RESOLVED (2026-09-26)** — event renamed to `ClaimCampaignPhase`, commit `b212cd8`. Evidence: `b212cd8` + contract lines 63/243 + tests 379/862 |
 | **GAP-E** | 2026-09-26 | BUILD_028B_IMPL §5 | High (data loss) | Hardhat paths → `./artifacts-hardhat`, `./cache-hardhat`; `.gitignore` updated | `2942373` | All 13 artifacts survive compile/test | **FIXED** |
 | **GAP-F** | 2026-09-26 | FINAL_CLOSURE §2, BUILD_028B_IMPL §1 | High (provenance) | 9 authority docs untracked — commit to close | — | BUILD_028B commit cites absent doc | **NOT CLOSED** — irreversible risk |
-| **GAP-G** | 2026-09-26 | FINAL_CLOSURE §6 | Low | Implicit campaign/phase existence validation (rejected by cap=0) | — | Test 602-605 | **OPEN** — accept implicit or add explicit |
-| **GAP-H** | 2026-09-26 | FINAL_CLOSURE §7 | High (drift) | 6 no-consumer deps + 11,791-line lock drift in package.json/lock | — | — | **OPEN** — commit under own label or revert |
+| **GAP-G** | 2026-09-26 | FINAL_CLOSURE §6 | Low | Implicit campaign/phase existence validation (rejected by cap=0) | — | Test 602-605 | **RESOLVED — DOCUMENTATION-ONLY (2026-09-26)** — implicit enforcement accepted, no explicit registry required, commit `3ee7604` (closure note in lock). Evidence: `3ee7604` + lock closure note + tests 353-355 and 602-605 |
+| **GAP-H** | 2026-09-26 | FINAL_CLOSURE §7 | High (drift) | 6 no-consumer deps + 11,791-line lock drift in package.json/lock | — | — | **PARTIALLY RESOLVED** — lock-drift dimension superseded by `3ee7604` (dotenv/node-fetch/jest removed; lock regenerated: 9,219 lines, 677 packages, consistent with package.json). Remaining: express/express-rate-limit/supertest have zero tracked consumers; holder-utility consumers untracked/unmerged — tracked-dependency question OPEN. Original finding preserved above |
 
 ---
 
@@ -82,12 +82,12 @@ Canonical registry of all findings, their remediation, and verification status.
 
 | Category | Count | Items |
 |----------|-------|-------|
-| **VERIFIED** | 28 | F-01, F-02, F-04, F-05, F-06, F-07, F-08, F-09, F-13, F-14, F-15, F-16, F-17, F-19, GAP-A, GAP-B, GAP-E, REMED_002-006, REMED_011-016, REMED_017-024, SG-01, SG-03, SG-05 |
+| **VERIFIED** | 31 | F-01, F-02, F-04, F-05, F-06, F-07, F-08, F-09, F-13, F-14, F-15, F-16, F-17, F-19, GAP-A, GAP-B, GAP-E, REMED_002-006, REMED_011-016, REMED_017-024, SG-01, SG-03, SG-05, GAP-C, GAP-D, GAP-G |
 | **PARTIALLY VERIFIED** | 3 | F-03, F-10, REMED_004 |
 | **CLOSED AS TEST** | 1 | GAP-A |
-| **UNRESOLVED** | 2 | GAP-C, GAP-D |
-| **NOT CLOSED** | 1 | GAP-F |
-| **OPEN** | 2 | GAP-G, GAP-H |
+| **UNRESOLVED** | 0 | — (GAP-C, GAP-D resolved via `b212cd8`) |
+| **NOT CLOSED** | 0 | — (GAP-F closed via `8ece175`: 9 authority docs tracked) |
+| **OPEN** | 1 | GAP-H remaining dimension only (GAP-G resolved documentation-only via `3ee7604`) |
 | **BLOCKED** | 2 | F-11, F-12 |
 | **UNVERIFIED** | 1 | F-03 (mainnet) |
 
@@ -111,14 +111,14 @@ Canonical registry of all findings, their remediation, and verification status.
 ```
 BUILD_028B (FROZEN, 204/204 PASS)
     │
-    ├─ GAP-F: Commit 9 authority docs (irreversible risk) → MUST DO NOW
-    ├─ GAP-H: Resolve package.json dep split → commit or revert
-    ├─ GAP-C: Founder ruling on allocation mutation
-    ├─ GAP-D: Founder ruling on event name
-    ├─ GAP-G: Founder ruling on implicit existence
+    ├─ GAP-F: CLOSED via `8ece175` (9 authority docs tracked)
+    ├─ GAP-H: PARTIALLY RESOLVED via `3ee7604` (lock drift superseded; remaining no-consumer question OPEN)
+    ├─ GAP-C: EXECUTED/RESOLVED via `b212cd8` (founder ruling in lock SECTION 8)
+    ├─ GAP-D: EXECUTED/RESOLVED via `b212cd8` (event = ClaimCampaignPhase)
+    ├─ GAP-G: EXECUTED/RESOLVED via `3ee7604` (implicit acceptance documented)
     │
     ▼
-BUILD_033: Deployment + role ceremony
+NEXT BUILD — pending founder ruling (BUILD_038 candidate)
     • ownership → Timelock
     • DEFAULT_ADMIN_ROLE → Timelock
     • PAUSER_ROLE → Guardian

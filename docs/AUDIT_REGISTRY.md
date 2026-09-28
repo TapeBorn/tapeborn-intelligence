@@ -25,6 +25,9 @@ Canonical index of all verified audits, reconciliations, reviews, and security g
 | Canonicalization: Docs Reconciliation | 2026-09-27 | `8fb9233` | Reconcile historical and current project documentation | Documentation | F-02, F-06, F-07, F-13 resolved | Historical vs current claims aligned | N/A | COMPLETE | Commit `8fb9233` |
 | Canonicalization: Archive | 2026-09-27 | `e170edb` | Archive historical reports and local control-plane scripts | Repository hygiene | Historical reports moved to docs/archive/ | F-17 | N/A | COMPLETE | Commit `e170edb` |
 | Canonicalization: SG-01/03 Fixes | 2026-09-27 | `187d85d` | SG-01 Test 16 fix + SG-03 ignore rule | Remediation | Test 16 case normalization, /test/ ignore correction | SG-01, SG-03 | 17/17 PASS, git check-ignore | COMPLETE | Commit `187d85d` |
+| REMEDIATION: GAP-C/GAP-D closure | 2026-09-26 | `b212cd8` | Founder ruling (lock SECTION 8) + event rename + allocation semantics | Remediation | GAP-C allocation ruling recorded, GAP-D event = `ClaimCampaignPhase` | Contract/tests/lock | 204/204 tests, contract line 63/243 + 91-100, tests 379/862 | VERIFIED / CLOSED | Commit `b212cd8` |
+| REMEDIATION: GAP-G closure + dependency pruning | 2026-09-26 | `3ee7604` | Implicit existence acceptance + package pruning | Remediation | GAP-G closure note in lock; dotenv/node-fetch/jest removed; lock regenerated (9,219 lines, 677 packages) | Lock + dependency/package audit | Lock closure note; lock consistent vs package.json | VERIFIED / GAP-H remaining dimension OPEN | Commit `3ee7604` |
+| PRE-BUILD-038 GATE | 2026-09-28 | `2cc2a81` | Pre-BUILD_038 open-gap + founder-decision gate (12 phases) | Read-only gate | Registry stale rows flagged; Treasury nonce conflict flagged; GAP-D line refs stale (cosmetic) | — | 204/204 (75 NFT + 80 Hardhat + 49 Engine), 17/17 negative | GREEN — GATE COMPLETE | Post-gate reconciliation report |
 
 ## Audit Type Classification
 

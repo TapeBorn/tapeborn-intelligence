@@ -4,6 +4,12 @@
 **Date:** 2026-09-26 · **Scope:** BUILD_028B production NFT contract + build hygiene (GAP-E/GAP-F triage)
 **Deployment status:** NOT deployed. No mainnet interaction, no key usage, no on-chain transaction.
 
+> **SUPERSEDED BY `3ee7604` / CURRENT GATE:** Historical snapshot. The committed-vs-local and
+> dependency-WIP statements below are dated 2026-09-26: dependencies were committed and the lock
+> regenerated in `3ee7604` (express/express-rate-limit/supertest tracked; dotenv/node-fetch/jest
+> removed; lock 9,219 lines/677 packages consistent); authority docs tracked in `8ece175`;
+> GAP-C/GAP-D ruled in `b212cd8`. This document remains preserved as the 2026-09-26 review record.
+
 ---
 
 ## 0. Executive summary
@@ -231,7 +237,7 @@ Test.sol                 (stray, repo root)
 | GAP-A | `DEFAULT_ADMIN_ROLE` bootstrapped to deployer in constructor; lock requires Timelock. Not a contract defect (bootstrap matches lock line 341) — the ceremony was untested. | Medium (ceremony) | **Closed as test** — group 12 proves `grantRole(timelock)` + `renounceRole(deployer)` → deployer reaches **zero roles**, Timelock sole admin, after which deployer cannot `grantRole`. Must be executed at deploy time (BUILD_033). |
 | GAP-B | `MAX_SUPPLY` exhaustion path untested | Low | **Closed** — white-box storage probe (scans slots 0..63, restores every non-matching slot); proves claim 2221→2222 succeeds and next reverts `"Supply exhausted"`. |
 | GAP-C | Raising `allocationCap` on an `EXHAUSTED` phase does not reopen it (`EXHAUSTED → ACTIVE` rejected). An exhausted phase is permanent; a raised cap is inert. | **CLOSED (2026-09-26)** — founder ruling recorded in lock SECTION 8 (commit `fix(nft): lock claim event and allocation semantics`). `setAllocationCap` now requires DRAFT/CONFIGURED/REVIEWED, reverting `"Allocation locked"` at ACTIVE/EXHAUSTED/CLOSED. |
-| GAP-D | **SPEC DEVIATION (corrected 2026-09-26 — the earlier "matches Section 21" note was wrong on the event NAME).** Lock SECTION 21 line 501 requires the event to be named `ClaimCampaignPhase(bytes32,bytes32,address,uint256)`; the contract emits `Claim(...)` (`TapeBornProductionNFT.sol:63`) and the tests assert `"Claim"`. Arguments/order/types **do** match, and field 4 is `tokenId` (not a quantity). §21 line 509 forbids "or similar". | Medium-High (integration / spec conformance) | **CLOSED (2026-09-26)** — event renamed to `ClaimCampaignPhase` in contract (declaration + emit) and tests; now conforms to SECTION 21 line 501. |
+| GAP-D | **SPEC DEVIATION (corrected 2026-09-26 — the earlier "matches Section 21" note was wrong on the event NAME).** Lock SECTION 21 (line 501 at `f09fa32`; line 511 current) requires the event to be named `ClaimCampaignPhase(bytes32,bytes32,address,uint256)`; the contract emits `Claim(...)` (`TapeBornProductionNFT.sol:63`) and the tests assert `"Claim"`. Arguments/order/types **do** match, and field 4 is `tokenId` (not a quantity). §21 (line 509 at `f09fa32`; line 519 current) forbids "or similar". | Medium-High (integration / spec conformance) | **CLOSED (2026-09-26)** — event renamed to `ClaimCampaignPhase` in contract (declaration + emit) and tests; now conforms to SECTION 21 (line 511 current). |
 | GAP-E | `paths.artifacts` collision silently deleted **13 tracked files** per compile/test run. | **High (data loss)** | **FIXED + committed** (`2942373`). |
 | **GAP-F** | **The BUILD_028B authority document (`BUILD_028A-EIP712-R_FOUNDER_DECISION_LOCK.md`) and the whole BUILD_024–028 spec chain are untracked.** The BUILD_028B commit cites a document that does not exist in the repository for any other clone, CI run, or auditor. 42 paths total are local-only. | **High (provenance)** | **OPEN** — see §6. |
 

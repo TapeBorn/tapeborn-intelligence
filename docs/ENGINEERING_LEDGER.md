@@ -80,6 +80,9 @@ Chronological stream: **BUILD → AUDIT → FINDING → REMEDIATION → VERIFICA
 | **SG-01** | 2026-09-27 | `187d85d` (this session) | Test 16 case-sensitive comparison fix | **CLOSED** | 17/17 PASS verified |
 | **SG-03** | 2026-09-27 | `187d85d` (this session) | `.gitignore: test/ → /test/` | **CLOSED** | contracts/test/ now visible |
 | **SG-05** | 2026-09-27 | Verification | Negative suite docs reconciled to 17/17 | **CLOSED** | — |
+| ERA-2 `b212cd8` | 2026-09-26 | fix(nft): lock claim event and allocation semantics — GAP-C/GAP-D remediation | CLOSED (remediation) | Founder ruling in lock SECTION 8 |
+| ERA-2 `3ee7604` | 2026-09-26 | chore(nft): close GAP-G and prune unused dependencies | CLOSED (remediation) | GAP-H remaining dimension OPEN |
+| `2cc2a81` | 2026-09-27 | docs: establish canonical engineering audit ledger | COMPLETE | Post-gate checkpoint |
 
 ---
 
@@ -139,12 +142,12 @@ BUILD_028B_FINAL_CLOSURE_REVIEW (2026-09-26)
   ↓
 GAP-A: CLOSED AS TEST (ceremony at BUILD_033)
 GAP-B: CLOSED (MAX_SUPPLY exhaustion test)
-GAP-C: UNRESOLVED — founder ruling needed (allocation mutation)
-GAP-D: UNRESOLVED — founder ruling needed (event name Claim vs ClaimCampaignPhase)
+GAP-C: CLOSED/RESOLVED — `b212cd8` (founder ruling in lock SECTION 8; setAllocationCap DRAFT/CONFIGURED/REVIEWED only)
+GAP-D: CLOSED/RESOLVED — `b212cd8` (event renamed ClaimCampaignPhase)
 GAP-E: FIXED (`2942373` — Hardhat artifacts isolation)
-GAP-F: NOT CLOSED — 9 authority docs untracked (irreversible risk)
-GAP-G: OPEN — implicit existence validation
-GAP-H: OPEN — package.json dep split
+GAP-F: CLOSED — `8ece175` (9 authority docs tracked)
+GAP-G: CLOSED/RESOLVED — `3ee7604` (implicit enforcement accepted, documentation-only)
+GAP-H: PARTIALLY RESOLVED — `3ee7604` (lock drift superseded: 9,219 lines/677 packages consistent); remaining no-consumer dependency question OPEN
   ↓
 Canonicalization pass (2026-09-27): `70ea4f7`, `0f8ed96`, `8fb9233`, `e170edb`
   ↓
@@ -189,10 +192,27 @@ CURRENT STATE: BUILD_028B FROZEN, 204/204 PASS, MAINNET BLOCKED
 - holder-utility merge — BRANCH EXISTS
 
 ### UNRESOLVED
-- **GAP-C** — Allocation mutation window: "non-ACTIVE" vs "pre-ACTIVE only"
-- **GAP-D** — Event name: `Claim` (impl) vs `ClaimCampaignPhase` (spec §21)
-- **GAP-G** — Implicit vs explicit campaign/phase existence validation
-- **GAP-H** — package.json dependency split (6 no-consumer deps + 11,791-line lock drift)
+- **Treasury nonce** — RPC/DOCUMENTATION CONFLICT — UNRESOLVED (see below)
+
+> Post-gate reconciliation (2026-09-27): GAP-C, GAP-D, GAP-G resolved; GAP-H partially resolved.
+> The four items below were UNRESOLVED as of the closure review (2026-09-26) and are now resolved —
+> recorded here for historical continuity:
+- **GAP-C** — Allocation mutation window: "non-ACTIVE" vs "pre-ACTIVE only" → **RESOLVED** (`b212cd8`)
+- **GAP-D** — Event name: `Claim` (impl) vs `ClaimCampaignPhase` (spec §21) → **RESOLVED** (`b212cd8`)
+- **GAP-G** — Implicit vs explicit campaign/phase existence validation → **RESOLVED — DOCUMENTATION-ONLY** (`3ee7604`)
+- **GAP-H** — package.json dependency split (6 no-consumer deps + 11,791-line lock drift) → **PARTIALLY RESOLVED** (`3ee7604`: lock drift superseded, 9,219 lines/677 packages consistent, dotenv/node-fetch/jest removed; remaining: express/express-rate-limit/supertest zero tracked consumers, holder-utility unmerged — tracked-dependency question OPEN)
+
+### EVIDENCE CONFLICT (UNRESOLVED)
+
+**Treasury Safe (testnet, `0xe9c0cb...`) nonce:**
+
+| Observation | Date | Method | Value |
+|---|---|---|---|
+| Documented | 2026-09-27 | read-only verification (CURRENT_STATE.md) | 1 |
+| Read-only RPC | 2026-09-28 | `eth_call 0xaffed0e0`, repeated twice | 0 |
+
+Classification: **RPC/DOCUMENTATION CONFLICT — UNRESOLVED.** No conclusion reached on which
+observation is correct; no on-chain write performed; nothing redeployed.
 
 ### UNVERIFIED
 - Genesis deployment transaction (`0x8dec28c1...`)
