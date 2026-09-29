@@ -83,14 +83,14 @@ For the complete engineering chronology, audit trail, and remediation registry, 
 
 ## GAP STATUS (post-gate reconciliation, 2026-09-27)
 
-| Gap | Current Status |
+|| Gap | Current Status ||
 |-----|----------------|
 | GAP-C | RESOLVED — founder ruling in lock SECTION 8, commit `b212cd8` |
 | GAP-D | RESOLVED — event `ClaimCampaignPhase`, commit `b212cd8` |
 | GAP-G | RESOLVED (documentation-only) — implicit enforcement, commit `3ee7604` |
-| GAP-H | PARTIALLY RESOLVED — lock drift superseded by `3ee7604` (9,219 lines/677 packages consistent); remaining no-consumer question OPEN |
-| BUILD_038 | AUTHORIZED — SCOPE E (2026-09-28). Current stage: 038-A — documentation/governance state reconciliation (in progress) |
-| 038 remaining | holder-utility tracking → 038-B · Treasury ceremony → 038-C · genesis deploy/mint receipts → later verification · Arc Studio capability verification → 038-D · production pre-deployment gate → 038-E |
+| GAP-H | RESOLVED (2026-09-29) — lock drift superseded by `3ee7604` (9,219 lines/677 packages consistent); no-consumer question closed by 038-B holder-utility tracking (express, express-rate-limit, supertest now have tracked consumers) |
+| BUILD_038 | AUTHORIZED — SCOPE E (2026-09-28). Current stage: 038-A — documentation/governance state reconciliation (complete); 038-B — holder-utility tracking + GAP-H closure (complete); 038-C — Treasury ceremony (pending) · genesis deploy/mint receipts → later verification · Arc Studio capability verification → 038-D · production pre-deployment gate → 038-E |
+| 038 remaining | Treasury ceremony → 038-C · genesis deploy/mint receipts → later verification · Arc Studio capability verification → 038-D · production pre-deployment gate → 038-E |
 
 ---
 

@@ -44,7 +44,7 @@ Canonical registry of all findings, their remediation, and verification status.
 | **GAP-E** | 2026-09-26 | BUILD_028B_IMPL §5 | High (data loss) | Hardhat paths → `./artifacts-hardhat`, `./cache-hardhat`; `.gitignore` updated | `2942373` | All 13 artifacts survive compile/test | **FIXED** |
 | **GAP-F** | 2026-09-26 | FINAL_CLOSURE §2, BUILD_028B_IMPL §1 | High (provenance) | 9 authority docs untracked — commit to close | — | BUILD_028B commit cites absent doc | **NOT CLOSED** — irreversible risk |
 | **GAP-G** | 2026-09-26 | FINAL_CLOSURE §6 | Low | Implicit campaign/phase existence validation (rejected by cap=0) | — | Test 602-605 | **RESOLVED — DOCUMENTATION-ONLY (2026-09-26)** — implicit enforcement accepted, no explicit registry required, commit `3ee7604` (closure note in lock). Evidence: `3ee7604` + lock closure note + tests 353-355 and 602-605 |
-| **GAP-H** | 2026-09-26 | FINAL_CLOSURE §7 | High (drift) | 6 no-consumer deps + 11,791-line lock drift in package.json/lock | — | — | **PARTIALLY RESOLVED** — lock-drift dimension superseded by `3ee7604` (dotenv/node-fetch/jest removed; lock regenerated: 9,219 lines, 677 packages, consistent with package.json). Remaining: express/express-rate-limit/supertest have zero tracked consumers; holder-utility consumers untracked/unmerged — tracked-dependency question OPEN. Original finding preserved above |
+|| **GAP-H** | 2026-09-26 | FINAL_CLOSURE §7 | High (drift) | 6 no-consumer deps + 11,791-line lock drift in package.json/lock | `3ee7604` (lock drift superseded, 9,219 lines/677 packages consistent), `a12e685` (038-B: holder-utility tracked, express/express-rate-limit/supertest now have tracked consumers) | Lock regenerated; holder-utility tracked; all consumers accounted | **RESOLVED (2026-09-29)** — lock drift dimension superseded by `3ee7604` (9,219 lines/677 packages consistent with package.json). Remaining no-consumer question closed by 038-B: holder-utility/server.js (express, express-rate-limit), test/holder-utility.test.js (supertest) now tracked. Original finding preserved above |
 
 ---
 
@@ -87,7 +87,7 @@ Canonical registry of all findings, their remediation, and verification status.
 | **CLOSED AS TEST** | 1 | GAP-A |
 | **UNRESOLVED** | 0 | — (GAP-C, GAP-D resolved via `b212cd8`) |
 | **NOT CLOSED** | 0 | — (GAP-F closed via `8ece175`: 9 authority docs tracked) |
-| **OPEN** | 1 | GAP-H remaining dimension only (GAP-G resolved documentation-only via `3ee7604`) |
+|| **OPEN** | 0 | — (GAP-C, GAP-D resolved via `b212cd8`; GAP-H resolved via 038-B tracking) |
 | **BLOCKED** | 2 | F-11, F-12 |
 | **UNVERIFIED** | 1 | F-03 (mainnet) |
 

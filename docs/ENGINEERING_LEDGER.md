@@ -257,3 +257,64 @@ valid. The conflict record above remains historically visible.
 6. **UNVERIFIED is never upgraded to VERIFIED without new evidence.** Claims without on-chain or commit proof stay UNVERIFIED.
 7. **Production deployment is separate from testnet verification.** Testnet PASS does not imply mainnet readiness.
 8. **BUILD_038 requires founder ruling.** Highest used anywhere = BUILD_037; next = BUILD_038, unassigned until founder decides scope.
+
+---
+
+## Layer F — BUILD_038-B Execution (2026-09-29)
+
+**Trigger:** Founder authorization for BUILD_038 scope E, stage 038-B execution.
+
+**Scope:** Track holder-utility workstream + close GAP-H tracked-consumer dimension + remove node-fetch runtime dependency + convert holder test to canonical node:test.
+
+**Executed:**
+
+| Component | Mutation | Evidence |
+|---|---|---|
+| `.gitignore` | Removed `holder-utility/` ignore rule (line 162) | `git diff .gitignore` |
+| `holder-utility/server.js` | Removed 2× `const fetch = (await import('node-fetch')).default;` → native `fetch` | `grep -n node-fetch` = no match |
+| `holder-utility/server.js` | No other changes — endpoints, auth, rate-limiting, RPC logic unchanged | diff verified |
+| `test/holder-utility.test.js` | Jest → node:test: `import { describe, test, before } from 'node:test'`; `import assert from 'node:assert/strict'`; 20 assertions converted | diff verified |
+| Tracked files | Added: `holder-utility/server.js`, `holder-utility/public/index.html`, `test/holder-utility.test.js` | `git status --short` = `A` for all three |
+| `package.json` | **UNCHANGED** | `git diff package.json` = empty |
+| `package-lock.json` | **UNCHANGED** | `git diff package-lock.json` = empty |
+| contracts/ | **UNCHANGED** | `git diff contracts/` = empty |
+| canonical tests/ | **UNCHANGED** | `git diff tests/` = empty |
+
+**Security scan:** No private key, signer, transaction submission, deployment, role mutation introduced. `ethers.Wallet.createRandom()` in test only (ephemeral, no key storage). Read-only `JsonRpcProvider`, `verifyMessage`, `balanceOf`, `ownerOf` unchanged.
+
+**Test results:**
+- Canonical `npm test` (49 engine + adversarial tests): **49 PASS / 0 FAIL**
+- Negative test suite (`npm run test:negative`): **17 PASS / 0 FAIL**
+- Holder-utility test (node:test): **4/5 PASS** — 1 known failure (signal detail expects 404, gets 503 because upstream localhost:3456 not running; this is an environment dependency, not a test logic failure; test 5 explicitly tests this 503 path and passes)
+
+**GAP-H validation:**
+- `express` → consumer: `holder-utility/server.js` (now tracked)
+- `express-rate-limit` → consumer: `holder-utility/server.js` (now tracked)
+- `supertest` → consumer: `test/holder-utility.test.js` (now tracked)
+- `node-fetch` → no longer referenced by tracked code (runtime dependency removed)
+- Lock drift dimension: superseded by `3ee7604` (9,219 lines/677 packages, consistent)
+- **GAP-H status: RESOLVED**
+
+**Documentation updated:**
+- `docs/REMEDIATION_REGISTRY.md`: GAP-H → RESOLVED
+- `docs/CURRENT_STATE.md`: GAP-H → RESOLVED; BUILD_038 stage updated (038-A complete, 038-B complete)
+- `docs/ENGINEERING_LEDGER.md`: This entry appended
+- `docs/AUDIT_REGISTRY.md`: 038-B execution row appended
+- `docs/BUILD_REGISTRY.md`: BUILD_038 stage updated
+
+**Commit:** `chore(utility): track holder-utility workstream and close GAP-H`
+
+**Push:** NOT AUTHORIZED — awaiting separate checkpoint push gate.
+
+**Final assertions:**
+- CONTRACT MUTATION: NONE
+- CANONICAL TEST MUTATION: NONE
+- PACKAGE MUTATION: NONE
+- LOCKFILE MUTATION: NONE
+- DEPLOYMENT: NONE
+- ON-CHAIN WRITE: NONE
+- SAFE TRANSACTION: NONE
+- ROLE TRANSACTION: NONE
+- TREASURY TRANSFER: NONE
+- BUILD_033 REUSE: NONE
+- HISTORICAL RECORD DELETION: NONE

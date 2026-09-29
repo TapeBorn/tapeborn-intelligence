@@ -111,12 +111,25 @@ The two eras **independently used** BUILD_024 and BUILD_026 for different work:
 ## Future Numbering Rule
 
 1. Next production stage = **BUILD_038** (highest used anywhere BUILD_037 + 1).
-   **AUTHORIZED (2026-09-28) — Scope E (A+B+C combined). Current stage: 038-A (documentation /
-   governance state reconciliation). Not fully executed; not a new number.**
+   **AUTHORIZED (2026-09-28) — Scope E (A+B+C combined). Current stage: 038-A complete; 038-B complete; 038-C Treasury ceremony (pending); 038-D Arc Studio capability verification; 038-E production pre-deployment gate.**
 2. All new BUILDs must check this registry first. A number appearing in **either** era table
    is occupied.
 3. Remediation phases remain named `REMEDIATION_N` / `R<N>` and do not consume BUILD numbers.
 4. Historical commits are immutable; collisions are resolved by context, never renaming.
+
+---
+
+## BUILD_038 Stage Tracking
+
+| Stage | Scope | Status | Commit |
+|-------|-------|--------|--------|
+| 038-A | Documentation/governance state reconciliation | COMPLETE (2026-09-28) | `719ed82` |
+| 038-B | Holder-utility tracking + GAP-H closure + node-fetch cleanup + test conversion | COMPLETE (2026-09-29) | `a12e685` (HEAD, post-038-B) |
+| 038-C | Treasury ceremony | NOT EXECUTED | — |
+| 038-D | Arc Studio capability verification / genesis deploy-mint receipts | NOT EXECUTED | — |
+| 038-E | Production pre-deployment gate | NOT EXECUTED | — |
+
+**BUILD_033 remains OCCUPIED — NEVER REUSE.**
 
 ---
 
