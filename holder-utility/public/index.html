@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TapeBorn Holder Utility MVP</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        .section { margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 0.5rem 1rem; margin: 0.5rem; cursor: pointer; }
+        input { padding: 0.5rem; margin: 0.5rem; }
+        .status { margin-top: 1rem; padding: 0.5rem; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6; }
+        .error { background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1; }
+        .info { background-color: #d9edf7; color: #31708f; border: 1px solid #bce8f1; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>TapeBorn Holder Utility MVP</h1>
+
+    <div id="connect-section" class="section">
+        <h2>Connect Wallet</h2>
+        <p>This is a demo UI. In a real dApp, you would use MetaMask or WalletConnect.</p>
+        <p>For demo purposes, we'll simulate a wallet address and signature.</p>
+        <button id="simulate-connect">Simulate Wallet Connection</button>
+    </div>
+
+    <div id="whitelist-section" class="section hidden">
+        <h2>Whitelist Eligibility Check</h2>
+        <p>Check if you are on the founder's whitelist and whether you have already minted.</p>
+        <button id="check-whitelist">Check Whitelist Status</button>
+        <div id="whitelist-result" class="status hidden"></div>
+    </div>
+
+    <div id="holder-section" class="section hidden">
+        <h2>Holder Dashboard</h2>
+        <p>Accessible only if you own a TapeBorn NFT.</p>
+        <button id="check-holder">Check Holder Access</button>
+        <div id="holder-result" class="status hidden"></div>
+    </div>
+
+    <div id="signal-feed-section" class="section hidden">
+        <h2>Holder Signal Feed</h2>
+        <p>Recent signals from the intelligence layer (requires holder access).</p>
+        <button id="load-signal-feed">Load Signal Feed</button>
+        <div id="signal-feed-result"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:3000/api';
+
+        // Simulated wallet (for demo)
+        let walletAddress = '0x1234567890abcdef1234567890abcdef12345678';
+        let walletSignature = null;
+        let nonce = null;
+
+        // Helper to show status
+        function showStatus(element, message, type = 'info') {
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.classList.remove('hidden');
+        }
+
+        // Simulate wallet connection (generate a signature)
+        document.getElementById('simulate-connect').addEventListener('click', async () => {
+            // In a real app, this would be done via wallet.signMessage
+            // For demo, we'll just set a dummy signature and nonce.
+            nonce = `tapeborn.io holder auth: ${Date.now()}`;
+            // We cannot actually sign without a private key, so we'll just pretend.
+            // In a real test, you would use a test wallet from a mnemonic.
+            walletSignature = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'; // 130 hex chars = 65 bytes
+            showStatus(document.getElementById('connect-section').querySelector('.status') || 
+                       (() => { const el = document.createElement('div'); document.getElementById('connect-section').appendChild(el); return el; })(),
+                       `Wallet connected: ${walletAddress}`, 'success');
+            document.getElementById('whitelist-section').classList.remove('hidden');
+            document.getElementById('holder-section').classList.remove('hidden');
+            document.getElementById('signal-feed-section').classList.remove('hidden');
+        });
+
+        // Check whitelist eligibility
+        document.getElementById('check-whitelist').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/whitelist/check`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: walletAddress, signature: walletSignature, nonce })
+                });
+                const data = await response.json();
+                const resultEl = document.getElementById('whitelist-result');
+                if (response.ok) {
+                    let msg = `Address: ${data.address}<br>`;
+                    msg += `Whitelisted: ${data.whitelisted ? 'Yes' : 'No'}<br>`;
+                    msg += `Has Minted: ${data.hasMinted ? 'Yes' : 'No'}<br>`;
+                    msg += `Remaining Mints: ${data.remainingMints}`;
+                    showStatus(resultEl, msg, data.whitelisted && !data.hasMinted ? 'success' : 'info');
+                } else {
+                    showStatus(resultEl, `Error: ${data.error || response.statusText}`, 'error');
+                }
+            } catch (err) {
+                showStatus(document.getElementById('whitelist-result').querySelector('.status') || 
+                           (() => { const el = document.createElement('div'); document.getElementById('whitelist-result').appendChild(el); return el; })(),
+                           `Network error: ${err.message}`, 'error');
+            }
+        });
+
+        // Check holder access
+        document.getElementById('check-holder').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/holder/dashboard`, {
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Address': walletAddress,
+                        'Signature': walletSignature,
+                        'Nonce': nonce
+                    }
+                });
+                const data = await response.json();
+                const resultEl = document.getElementById('holder-result');
+                if (response.ok) {
+                    showStatus(resultEl, `Holder access granted: ${data.message}`, 'success');
+                    // Enable signal feed button
+                    document.getElementById('load-signal-feed').disabled = false;
+                } else {
+                    showStatus(resultEl, `Error: ${data.error || response.statusText}`, 'error');
+                }
+            } catch (err) {
+                showStatus(document.getElementById('holder-result').querySelector('.status') || 
+                           (() => { const el = document.createElement('div'); document.getElementById('holder-result').appendChild(el); return el; })(),
+                           `Network error: ${err.message}`, 'error');
+            }
+        });
+
+        // Load signal feed (holder-only)
+        document.getElementById('load-signal-feed').addEventListener('click', async () => {
+            document.getElementById('load-signal-feed').disabled = true;
+            try {
+                const response = await fetch(`${API_BASE}/holder/signal-feed`, {
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Address': walletAddress,
+                        'Signature': walletSignature,
+                        'Nonce': nonce
+                    }
+                });
+                const data = await response.json();
+                const resultEl = document.getElementById('signal-feed-result');
+                if (response.ok) {
+                    if (Array.isArray(data) && data.length > 0) {
+                        let html = '<ul>';
+                        data.slice(0, 5).forEach(signal => {
+                            html += `<li>${signal.type || 'Unknown'} at ${new Date(signal.timestamp || 0).toLocaleString()}</li>`;
+                        });
+                        html += '</ul>';
+                        if (data.length > 5) {
+                            html += `<p>... and ${data.length - 5} more signals</p>`;
+                        }
+                        resultEl.innerHTML = html;
+                    } else {
+                        resultEl.innerHTML = '<p>No signal data available.</p>';
+                    }
+                } else {
+                    resultEl.innerHTML = `<p class="error">Error: ${data.error || response.statusText}</p>`;
+                }
+            } catch (err) {
+                document.getElementById('signal-feed-result').innerHTML = `<p class="error">Network error: ${err.message}</p>`;
+            } finally {
+                document.getElementById('load-signal-feed').disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
